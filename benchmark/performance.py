@@ -1,17 +1,32 @@
 import time
+import threading
 import psutil
 import numpy as np
-from memory_profiler import memory_usage
 
-def measure_specs(function, *args): # args sind die Parameter für die Funktion
-    proc = psutil.Process()
-    proc.cpu_percent()  # Misst CPU-Auslastung seit letztem Aufruf, initial 0.0
+proc = psutil.Process() # Einmal erstellen, nicht pro Aufruf
+
+def measure_specs(fn, *args):
+    proc.cpu_percent() # CPU-Delta-Zähler zurücksetzen
+    samples = []
+    sampling_done = threading.Event()
+
+    def sample():
+        # RAM alle 100 ms samplen, bis stop gesetzt wird
+        while not sampling_done.wait(0.1):
+            samples.append(proc.memory_info().rss / 1024 / 1024)
+
+    threading.Thread(target=sample, daemon=True).start()
     t0 = time.perf_counter()
-    ram_samples, result = memory_usage((function, args), interval=0.1, retval=True)
-    t1 = time.perf_counter() - t0
+    result = fn(*args)
+    elapsed = time.perf_counter() - t0
+    sampling_done.set()
+
+    if not samples: # Fallback falls Funktion schneller als 100 ms war
+        samples = samples.append(proc.memory_info().rss / 1024 / 1024)
+
     return result, {
-        "zeit_s":      round(t1, 3),
-        "ram_peak_mb": round(max(ram_samples), 2),
-        "ram_mean_mb": round(np.mean(ram_samples), 2),
-        "cpu_%":       round(proc.cpu_percent(), 2),
+        "zeit_s": round(elapsed, 3),
+        "ram_max_mb": round(max(samples), 2),
+        "ram_avg_mb": round(float(np.mean(samples)), 2),
+        "cpu_%": round(proc.cpu_percent() / psutil.cpu_count(), 2), # normalisiert auf 0–100 % (psutil liefert Summe über alle Kerne)
     }
