@@ -1,16 +1,3 @@
-# pyannote.audio Speaker Embedding Adapter
-#
-# pyannote.audio 3.x: Bredin & Laurent (2023)
-#   "End-to-end speaker segmentation for overlap-aware resegmentation"
-#   https://arxiv.org/abs/2104.04045
-#
-# Modell "pyannote/embedding":
-#   - Braucht einen HuggingFace-Token (kostenlos): https://huggingface.co/pyannote/embedding
-#   - Token übergeben via hf_token-Parameter ODER Umgebungsvariable HUGGINGFACE_TOKEN
-#   - Zugang zum Modell einmalig auf HuggingFace beantragen (Klick auf "Agree and access repository")
-#
-# Installieren: pip install pyannote.audio
-
 import os
 import numpy as np
 import torch
@@ -18,7 +5,7 @@ import soundfile as sf
 from pyannote.audio import Model, Inference
 
 class Pyannote:
-    def __init__(self, model: str, device: str = "cpu") -> None:
+    def __init__(self, model: str, device: str) -> None:
         self.model = model
         self.device = device
         self.token = os.environ.get("HUGGINGFACE_TOKEN")

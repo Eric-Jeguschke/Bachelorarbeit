@@ -11,3 +11,5 @@ tqdm~=4.67.3
 librosa~=0.11.0
 pyannote-core~=6.0.1
 pveagle~=3.0.1
+speechbrain~=1.1.0
+ffmpeg-python # https://www.gyan.dev/ffmpeg/builds/ ffmpeg-shared runderladen und in den PATH einfügen
