@@ -8,7 +8,7 @@ from tqdm import tqdm # Fortschrittsbalken in der Konsole
 from benchmark.metrics import all_metrics
 from benchmark.performance import measure_specs
 from benchmark.load_dataset import load_voxceleb1_veri_test
-# from benchmark.frameworks.nemo_adapter import NeMo
+from benchmark.frameworks.nemo_adapter import NeMo
 # from benchmark.frameworks.speechbrain_adapter import SpeechBrain
 from benchmark.frameworks.pyannote_adapter import Pyannote
 # from benchmark.frameworks.picovoice_adapter import Picovoice
@@ -18,8 +18,8 @@ from benchmark.visualize import all_plots_generate
 load_dotenv()
 
 MODELS = [
-    # NeMo("titanet-large", device="cuda"),
-    # NeMo("titanet-small", device="cuda"),
+    # NeMo("titanet_large", device="cuda"),
+    NeMo("titanet_small", device="cuda"),
     # NeMo("speakerverification_speakernet", device="cuda"),
     # NeMo("ecapa_tdnn", device="cuda"),
     # SpeechBrain("speechbrain/spkrec-ecapa-voxceleb", device="cuda"),
@@ -51,7 +51,7 @@ for model in MODELS:
     else:
         idle_vram_mb = 0
 
-    for trial in tqdm(trials, desc="Trials"):
+    for trial in tqdm(trials[:100], desc="Trials"): # erstmal nur 100 zum testen
         emb1, stats1 = measure_specs(model.embedding, trial["audio1"])
         emb2, stats2 = measure_specs(model.embedding, trial["audio2"])
         embedding_stats.append(stats1)
@@ -80,6 +80,6 @@ for model in MODELS:
 os.makedirs("results", exist_ok=True) # Ordner für Ergebnisse erstellen, falls nicht vorhanden
 
 with open("results/summary.json", "w", encoding="utf-8") as f:
-    json.dump(results, f)
+    json.dump(results, f, indent=4)
 
 all_plots_generate("results")
