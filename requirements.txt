@@ -1,0 +1,13 @@
+torch~=2.11.0+cu126
+soundfile~=0.13.1
+numpy~=2.4.4
+scikit-learn~=1.6.1
+matplotlib~=3.10.9
+pandas~=2.2.3
+seaborn~=0.13.2
+psutil~=7.0.0
+python-dotenv~=1.1.0
+tqdm~=4.67.3
+librosa~=0.11.0
+pyannote-core~=6.0.1
+pveagle~=3.0.1

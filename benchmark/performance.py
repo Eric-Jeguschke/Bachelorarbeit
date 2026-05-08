@@ -2,10 +2,11 @@ import time
 import threading
 import psutil
 import numpy as np
+from typing import Any, Callable
 
 proc = psutil.Process() # Einmal erstellen, nicht pro Aufruf
 
-def measure_specs(fn, *args):
+def measure_specs(fn: Callable, *args: Any) -> tuple[Any, dict[str, float]]:
     proc.cpu_percent() # CPU-Delta-Zähler zurücksetzen
     samples = []
     sampling_done = threading.Event()
@@ -22,7 +23,7 @@ def measure_specs(fn, *args):
     sampling_done.set()
 
     if not samples: # Fallback falls Funktion schneller als 100 ms war
-        samples = samples.append(proc.memory_info().rss / 1024 / 1024)
+        samples.append(proc.memory_info().rss / 1024 / 1024)
 
     return result, {
         "zeit_s": round(elapsed, 3),

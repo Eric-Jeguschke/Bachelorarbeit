@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn.metrics import roc_curve
+from numpy.typing import NDArray
 
 # EER: Schnittpunkt von FAR und FRR
 # FAR = FPR (x-Achse der ROC-Kurve)
@@ -8,7 +9,7 @@ from sklearn.metrics import roc_curve
 # EXTRA INFO: FAR = FP/(FP+TN),  FRR = FN/(FN+TP) = 1 - TPR
 # labels: 1 = gleicher Sprecher, 0 = verschiedene Sprecher
 # scores: höher = ähnlicher
-def eer_compute(fpr, tpr, thresholds):
+def eer_compute(fpr: NDArray, tpr: NDArray, thresholds: NDArray) -> tuple[float, float]:
     far = fpr # FAR = False Acceptance Rate
     frr = 1.0 - tpr # FRR = False Rejection Rate
     index = np.argmin(np.abs(far - frr)) # Index des Punktes mit minimalem Abstand zwischen FAR und FRR
@@ -26,7 +27,7 @@ def eer_compute(fpr, tpr, thresholds):
 # p_target:   A-priori-Wahrscheinlichkeit, dass es der echte Sprecher ist (NIST-Standard: 0.01)
 # c_miss:     Kosten für fälschliche Ablehnung eines echten Sprechers (NIST-Standard: 1), desto höher, desto schwerwiegender ist es, einen echten Sprecher abzulehnen
 # c_fa:       Kosten für fälschliche Akzeptanz eines fremden Sprechers (NIST-Standard: 1), desto höher, desto schwerwiegender ist es, einen fremden Sprecher zu akzeptieren
-def compute_min_dcf(fnrs, fprs, p_target, c_miss, c_fa):
+def compute_min_dcf(fnrs: NDArray, fprs: NDArray, p_target: float, c_miss: float, c_fa: float) -> float:
     min_c_det = float("inf")
     for i in range(0, len(fnrs)):
         # See Equation (2).  it is a weighted sum of false negative
@@ -40,10 +41,10 @@ def compute_min_dcf(fnrs, fprs, p_target, c_miss, c_fa):
 
 # TAR@FAR: True Accept Rate bei gegebener False Accept Rate
 # FAR = Wahrscheinlichkeit, dass ein fremder Sprecher fälschlicherweise akzeptiert wird
-def tar_at_far(target_far, fpr, tpr):
+def tar_at_far(target_far: float, fpr: NDArray, tpr: NDArray) -> float:
     return round(np.interp(target_far, fpr, tpr) * 100, 3)
 
-def all_metrics(labels, scores):
+def all_metrics(labels: list[int], scores: list[float]) -> dict[str, float]:
     fpr, tpr, thresholds = roc_curve(labels, scores, pos_label=1)
     fnrs = 1.0 - tpr # FNR = False Negative Rate = FRR = False Rejection Rate, fnrs ist plural, weil Kaldi Implementierung von compute_min_dcf fnrs als Liste von FNRs für alle Schwellenwerte erwartet
     eer_value, threshold = eer_compute(fpr, tpr, thresholds)
