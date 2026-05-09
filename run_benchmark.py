@@ -8,31 +8,33 @@ from tqdm import tqdm # Fortschrittsbalken in der Konsole
 from benchmark.metrics import all_metrics
 from benchmark.performance import measure_specs
 from benchmark.load_dataset import load_voxceleb1_veri_test
-from benchmark.frameworks.nemo_adapter import NeMo
-from benchmark.frameworks.speechbrain_adapter import SpeechBrain
-from benchmark.frameworks.pyannote_adapter import Pyannote
-# from benchmark.frameworks.picovoice_adapter import Picovoice
+from benchmark.frameworks.nemo_model import NeMo
+from benchmark.frameworks.pyannote_model import Pyannote
+from benchmark.frameworks.speechbrain_model import SpeechBrain
+# from benchmark.frameworks.picovoice_model import Picovoice
 from sklearn.metrics.pairwise import cosine_similarity
 from benchmark.visualize import all_plots_generate
 
 load_dotenv()
 
 MODELS = [
+    # SpeechBrain("speechbrain/spkrec-xvect-voxceleb", device="cuda"), # k2-Abhängigkeit, kein Windows-Support
+    Pyannote("pyannote/embedding", device="cuda"),
+    Pyannote("pyannote/wespeaker-voxceleb-resnet34-LM", device="cuda"),
+    SpeechBrain("speechbrain/spkrec-ecapa-voxceleb", device="cuda"),
+    SpeechBrain("speechbrain/spkrec-resnet-voxceleb", device="cuda"),
     NeMo("titanet_large", device="cuda"),
     NeMo("titanet_small", device="cuda"),
     NeMo("speakerverification_speakernet", device="cuda"),
     NeMo("ecapa_tdnn", device="cuda"),
-    SpeechBrain("speechbrain/spkrec-ecapa-voxceleb", device="cuda"),
-    SpeechBrain("speechbrain/spkrec-xvect-voxceleb", device="cuda"),
-    Pyannote("pyannote/embedding", device="cuda"),
-    # Picovoice(device="cuda"),
+    # Picovoice(device="cuda")
 ]
 
 trials = load_voxceleb1_veri_test()
 results = []
 
 for model in MODELS:
-    name = f"{model.__class__.__name__}"
+    name = model.model_name
     print(f"{name}")
     embedding_stats = [] # Liste von Dikt-Objekten mit "zeit_s", "ram_avg_mb", "ram_max_mb", "cpu_%"
     labels = [] # 1 = gleicher Sprecher, 0 = verschiedene Sprecher

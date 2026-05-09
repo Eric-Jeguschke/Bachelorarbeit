@@ -19,11 +19,12 @@ class SpeechBrain:
             source=self.model_name,
             run_opts={"device": device_name}
         )
+        self.model_instance.eval()
         print(f"Modell Speechbrain {self.model_name} läuft auf: {self.device}")
 
     # https://huggingface.co/speechbrain/spkrec-ecapa-voxceleb
     def embedding(self, path: str) -> np.ndarray:
         data, _ = sf.read(path, dtype="float32") # torchAudio funktioniert nicht, deswegen ausgewichen auf soundfile
-        signal = torch.from_numpy(data).unsqueeze(0)
-        embedding = self.model_instance.encode_batch(signal)
+        waveform = torch.from_numpy(data).unsqueeze(0)
+        embedding = self.model_instance.encode_batch(waveform)
         return embedding.squeeze().cpu().numpy()
