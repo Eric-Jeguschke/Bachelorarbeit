@@ -3,22 +3,16 @@
 <package format="3">
   <name>system_launch</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="ericj@todo.todo">ericj</maintainer>
+  <description>Startet alle Nodes des PIB-Erkennungssystems</description>
+  <maintainer email="eric.jeguschke@gmail.com">ericj</maintainer>
   <license>Apache-2.0</license>
 
-  <depend>display</depend>
-  <depend>db</depend>
-  <depend>camera</depend>
-  <depend>microphone</depend>
-  <depend>speaker</depend>
-  <depend>recognition</depend>
-  <depend>voice_ai</depend>
-
-  <test_depend>ament_copyright</test_depend>
-  <test_depend>ament_flake8</test_depend>
-  <test_depend>ament_pep257</test_depend>
-  <test_depend>python3-pytest</test_depend>
+  <exec_depend>db</exec_depend>
+  <exec_depend>camera</exec_depend>
+  <exec_depend>microphone</exec_depend>
+  <exec_depend>speaker</exec_depend>
+  <exec_depend>recognition</exec_depend>
+  <exec_depend>voice_ai</exec_depend>
 
   <export>
     <build_type>ament_python</build_type>
