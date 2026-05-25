@@ -1,2 +1,6 @@
 .env
 /.idea
+.claude
+recognition_system/ros2_ws/build/
+recognition_system/ros2_ws/install/
+recognition_system/ros2_ws/log/
