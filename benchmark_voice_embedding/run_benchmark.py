@@ -44,22 +44,16 @@ for model in MODELS:
 
     # Vorheriges Modell aus dem Speicher freigeben bevor RAM gemessen wird
     gc.collect() # Python-Garbage-Collector erzwingen: gibt Objekte frei, deren Referenzzähler 0 ist (z.B. das vorherige Modell)
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-
-    # RAM und VRAM vor und nach Laden des Modells messen
-    ram_t0 = proc.memory_info().rss / 1024 / 1024
     cuda_available = torch.cuda.is_available()
     if cuda_available:
-        torch.cuda.reset_peak_memory_stats() # VRAM-Peak nach Laden des Modells messen, deshalb hier zurücksetzen
-    model.load()
-    idle_ram_mb  = proc.memory_info().rss / 1024 / 1024 - ram_t0
-    if cuda_available:
-        idle_vram_mb = torch.cuda.memory_allocated() / 1024 / 1024
-    else:
-        idle_vram_mb = 0
+        torch.cuda.empty_cache()
+        torch.cuda.reset_peak_memory_stats()
 
-    for trial in tqdm(trials[:3000], desc="Trials"): # erstmal nur 2000 zum testen
+    ram_t0 = proc.memory_info().rss / 1024 / 1024
+    model.load()
+    idle_ram_mb = proc.memory_info().rss / 1024 / 1024 - ram_t0
+
+    for trial in tqdm(trials, desc="Trials"):
         emb1, stats1 = measure_specs(model.embedding, trial["audio1"])
         emb2, stats2 = measure_specs(model.embedding, trial["audio2"])
         embedding_stats.append(stats1)
@@ -76,7 +70,6 @@ for model in MODELS:
     results.append({
         "modell": name,
         "idle_ram_mb": round(idle_ram_mb, 2),
-        "idle_vram_mb": round(idle_vram_mb, 2),
         "vram_peak_mb": round(vram_peak_mb, 2),
         "inf_mean_s": round(np.mean([t["zeit_s"] for t in embedding_stats]), 3),
         "ram_max_mb": round(max(x["ram_max_mb"] for x in embedding_stats), 2),

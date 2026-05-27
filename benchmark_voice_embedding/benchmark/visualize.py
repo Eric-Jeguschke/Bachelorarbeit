@@ -5,7 +5,6 @@ import seaborn as sns
 
 PLOTS = {
     "idle_ram_mb": "RAM nach Modell-Laden (MB)",
-    "idle_vram_mb": "VRAM nach Modell-Laden (MB)",
     "vram_peak_mb": "VRAM Maximum (MB)",
     "inf_mean_s": "Inferenzzeit Durchschnitt (s)",
     "ram_max_mb": "RAM Maximum (MB)",
