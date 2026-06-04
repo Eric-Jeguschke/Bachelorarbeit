@@ -1,0 +1,6 @@
+float32 max_seconds   # Maximale Aufnahmedauer (0 = 30s Standard), ignoriert wenn audio_path gesetzt
+string audio_path     # Optional: Pfad zu WAV-Datei (für Tests)
+---
+bool success
+string transcript
+float32[] voice_emb
