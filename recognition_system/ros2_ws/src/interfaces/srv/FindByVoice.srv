@@ -1,0 +1,6 @@
+float32[] voice_emb   # Stimmen-Embedding (256 Int Werte von pyannote Audio, normalisiert auf [0,1])
+---
+bool found
+string guest_id
+string name
+int64 last_seen

@@ -1,6 +1,7 @@
 import subprocess
 
 import rclpy
+from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from openai import OpenAI
 
@@ -40,8 +41,10 @@ class SpeakerNode(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = SpeakerNode()
+    executor = MultiThreadedExecutor()
+    executor.add_node(node)
     try:
-        rclpy.spin(node)
+        executor.spin()
     except KeyboardInterrupt:
         pass
     finally:

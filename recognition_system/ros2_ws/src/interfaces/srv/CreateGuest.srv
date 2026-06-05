@@ -1,0 +1,7 @@
+string name
+float32[] voice_emb
+string episode_json
+string memory_json
+---
+bool success
+string guest_id

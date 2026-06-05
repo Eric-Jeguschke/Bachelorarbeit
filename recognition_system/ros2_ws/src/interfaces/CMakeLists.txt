@@ -7,11 +7,12 @@ find_package(std_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/PersonDetected.msg"
-  "srv/FindByFace.srv"
-  "srv/CreateOrUpdateGuest.srv"
-  "srv/AppendConversation.srv"
-  "srv/RecordAudio.srv"
-  "srv/Speak.srv"
+  "srv/CreateGuest.srv"
+  "srv/FindByVoice.srv"
+  "srv/RetrieveContext.srv"
+  "srv/STT.srv"
+  "srv/TTS.srv"
+  "srv/UpdateGuest.srv"
   DEPENDENCIES std_msgs
 )
 

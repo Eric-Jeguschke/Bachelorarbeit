@@ -1,0 +1,98 @@
+import rclpy
+from rclpy.executors import MultiThreadedExecutor
+from rclpy.node import Node
+from sentence_transformers import SentenceTransformer
+
+from interfaces.srv import CreateGuest, UpdateGuest, FindByVoice, RetrieveContext
+
+from db.guest_store import clean_old_entries, find_by_voice, create_guest, update_guest, retrieve_context
+
+
+class GuestDBNode(Node):
+    def __init__(self):
+        super().__init__("db")
+        # Text Embedding Model: https://aimultiple.com/multilingual-embedding-models, 384 Dimensionen
+        self.embedder = SentenceTransformer("intfloat/multilingual-e5-small")
+
+        self.create_service(FindByVoice, "~/find_by_voice", self.handle_find)
+        self.create_service(CreateGuest, "~/create_guest", self.handle_create)
+        self.create_service(UpdateGuest, "~/update_guest", self.handle_update)
+        self.create_service(RetrieveContext, "~/retrieve_context", self.handle_retrieve)
+        self.create_timer(86400.0, clean_old_entries) # Einmal täglich alte Einträge bereinigen
+        self.get_logger().info("GuestDB node gestartet")
+
+    def embed_passage(self, text: str) -> list[float]:
+        """Für zu speichernde Texte (Fakten, Keywords)"""
+        return self.embedder.encode("passage: " + text, normalize_embeddings=True).tolist()
+
+    def embed_query(self, text: str) -> list[float]:
+        """Für Suchanfragen beim RAG-Retrieval"""
+        return self.embedder.encode("query: " + text, normalize_embeddings=True).tolist()
+
+    def handle_find(self, request, response):
+        result = find_by_voice(list(request.voice_emb))
+        if result:
+            response.found = True
+            response.guest_id = result.get("guest_id", "")
+            response.name = result.get("name", "")
+            response.last_seen = int(result.get("last_seen", 0))
+        else:
+            response.found = False
+            self.get_logger().error("find_by_voice fehlgeschlagen")
+        return response
+
+    def handle_create(self, request, response):
+        guest_id = create_guest(
+            name=request.name,
+            voice_emb=list(request.voice_emb),
+            episode_json=request.episode_json,
+            memory_json=request.memory_json,
+            text_embedder=self.embed_passage,
+        )
+        response.guest_id = guest_id
+        if guest_id:
+            response.success = True
+        else:
+            response.success = False
+            self.get_logger().error("create_guest fehlgeschlagen")
+        return response
+
+    def handle_update(self, request, response):
+        guest_id = update_guest(
+            guest_id=request.guest_id,
+            name=request.name,
+            voice_emb=list(request.voice_emb),
+            episode_json=request.episode_json,
+            memory_json=request.memory_json,
+            text_embedder=self.embed_passage,
+        )
+        response.guest_id = guest_id
+        if guest_id:
+            response.success = True
+        else:
+            response.success = False
+            self.get_logger().error(f"update_guest fehlgeschlagen für guest_id {request.guest_id}")
+        return response
+
+    def handle_retrieve(self, request, response):
+        response.contexts = retrieve_context(
+            request.guest_id,
+            self.embed_query(request.search_text),
+        )
+        if not response.contexts:
+            self.get_logger().warning(f"Kein Kontext gefunden für guest_id {request.guest_id}")
+        return response
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = GuestDBNode()
+    executor = MultiThreadedExecutor()
+    executor.add_node(node)
+    try:
+        executor.spin()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
