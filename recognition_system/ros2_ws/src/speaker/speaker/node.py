@@ -27,7 +27,7 @@ class SpeakerNode(Node):
         return response
 
     def speak(self, text: str):
-        speech_file_path = "speech.mp3"
+        speech_file_path = "/tmp/speech.mp3"
         with self.client.audio.speech.with_streaming_response.create(
             model="xtts-v2",
             voice="fable",

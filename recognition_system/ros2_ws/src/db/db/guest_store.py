@@ -35,11 +35,9 @@ def create_guest(name: str, voice_emb: list, episode_json: str, memory_json: str
         "retention_until": now + 60 * 60 * 24 * 30, # 30 Tage aufbewahren
     }])
     if not add_episode(guest_id, episode_json, text_embedder):
-        logger.warning(f"add_episode fehlgeschlagen für guest {guest_id}")
-        return ""
+        logger.warning(f"Keine Episode gespeichert für guest {guest_id}")
     if not update_memories(guest_id, memory_json, text_embedder):
-        logger.warning(f"update_memories fehlgeschlagen für guest {guest_id}")
-        return ""
+        logger.warning(f"Keine Memories gespeichert für guest {guest_id}")
     return guest_id
 
 
@@ -58,11 +56,9 @@ def update_guest(guest_id: str, name: str, voice_emb: list, episode_json: str, m
         values["voice_emb"] = updated_voice_emb.tolist()
     get_profiles_table().update(where=f"guest_id = '{guest_id}'", values=values)
     if not add_episode(guest_id, episode_json, text_embedder):
-        logger.warning(f"add_episode fehlgeschlagen für guest {guest_id}")
-        return ""
+        logger.warning(f"Keine Episode gespeichert für guest {guest_id}")
     if not update_memories(guest_id, memory_json, text_embedder):
-        logger.warning(f"update_memories fehlgeschlagen für guest {guest_id}")
-        return ""
+        logger.warning(f"Keine Memories gespeichert für guest {guest_id}")
     return guest_id
 
 

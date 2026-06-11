@@ -30,7 +30,12 @@ class GuestDBNode(Node):
         return self.embedder.encode("query: " + text, normalize_embeddings=True).tolist()
 
     def handle_find(self, request, response):
-        result = find_by_voice(list(request.voice_emb))
+        try:
+            result = find_by_voice(list(request.voice_emb))
+        except Exception as e:
+            self.get_logger().error(f"find_by_voice fehlgeschlagen: {e}")
+            response.found = False
+            return response
         if result:
             response.found = True
             response.guest_id = result.get("guest_id", "")
@@ -38,7 +43,6 @@ class GuestDBNode(Node):
             response.last_seen = int(result.get("last_seen", 0))
         else:
             response.found = False
-            self.get_logger().error("find_by_voice fehlgeschlagen")
         return response
 
     def handle_create(self, request, response):

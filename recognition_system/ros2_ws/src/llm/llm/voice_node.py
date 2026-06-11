@@ -1,6 +1,5 @@
 import threading
 import time
-
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
@@ -32,7 +31,9 @@ class VoiceNode(Node):
         if self.conversation_running:
             return
         self.conversation_running = True
-        self.run_conversation(person) # vielleicht in eigenem Thread laufen lassen, damit nicht blockiert beim sleep unten
+        # Eigener Thread nötig: run_conversation blockiert mit time.sleep() in call_service.
+        # Läuft run_conversation direkt im Callback, kann der Executor die Service-Response nicht verarbeiten → Deadlock.
+        threading.Thread(target=self.run_conversation, args=(person,), daemon=True).start()
 
     def run_conversation(self, person: PersonDetected):
         self.llm.init_with_context(person.name, person.last_seen)
