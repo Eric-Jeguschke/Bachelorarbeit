@@ -36,8 +36,8 @@ class MicrophoneNode(Node):
                     response.voice_emb = []
                     return response
                 audio = np.concatenate(frames) # frames ist eine Liste von 1024-Sample-Blöcken. "concatenate" fügt sie zu einem einzigen Liste zusammen
-                sf.write("recording.wav", audio, 16000)
-                file_path = "recording.wav"
+                sf.write("/tmp/recording.wav", audio, 16000)
+                file_path = "/tmp/recording.wav"
 
             response.transcript = self.transcribe(file_path)
             response.voice_emb = self.voice_embedder.embed_from_pcm(audio, 16000).tolist()
