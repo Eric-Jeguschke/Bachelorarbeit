@@ -20,7 +20,7 @@ COPY asound.conf /etc/asound.conf
 WORKDIR /ros2_ws
 COPY requirements.txt /tmp/requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip3 install --break-system-packages -r /tmp/requirements.txt
+    pip3 install --break-system-packages --ignore-installed -r /tmp/requirements.txt
 
 COPY ros2_ws/src /ros2_ws/src
 

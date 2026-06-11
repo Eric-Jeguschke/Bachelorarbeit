@@ -5,7 +5,7 @@ torch
 # Datenbank
 lancedb
 pyarrow
-sentence-transformers
+sentence-transformers<4.0
 
 # Mikrofon
 numpy
