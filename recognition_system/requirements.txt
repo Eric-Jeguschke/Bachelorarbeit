@@ -1,0 +1,17 @@
+# Stimmen-Embedding
+pyannote.audio
+torch
+
+# Datenbank
+lancedb
+pyarrow
+sentence-transformers
+
+# Mikrofon
+numpy
+sounddevice
+soundfile
+librosa
+
+# LLM / STT / TTS API
+openai

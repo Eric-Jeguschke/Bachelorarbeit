@@ -4,10 +4,10 @@ import time
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
-from std_msgs.msg import Empty
+from std_msgs.msg import String
 
 from interfaces.msg import PersonDetected
-from interfaces.srv import CreateGuest, UpdateGuest, STT, RetrieveContext, TTS
+from interfaces.srv import CreateGuest, UpdateGuest, Listen, RetrieveContext, TTS
 from llm.llm_chat import LLMChatModule
 from llm.llm_rag import RAGModule
 
@@ -18,12 +18,12 @@ class VoiceNode(Node):
         self.llm = LLMChatModule(self.get_logger())
         self.rag = RAGModule(self.get_logger())
 
-        self.mic_client = self.create_client(STT, "/microphone/stt")
+        self.mic_client = self.create_client(Listen, "/microphone/stt")
         self.speaker_client = self.create_client(TTS, "/speaker/tts")
         self.db_create_guest_client = self.create_client(CreateGuest, "/db/create_guest")
         self.db_update_guest_client = self.create_client(UpdateGuest, "/db/update_guest")
         self.db_context_client = self.create_client(RetrieveContext, "/db/retrieve_context")
-        self.conv_done_pub = self.create_publisher(Empty, "/llm/conversation_done", 1)  # 1 = Queue-Größe
+        self.conv_done_pub = self.create_publisher(String, "/llm/conversation_done", 1)  # 1 = Queue-Größe
         self.create_subscription(PersonDetected, "/recognition/person_detected", self.person_detected, 1)
         self.conversation_running = False
         self.get_logger().info("Voice AI node gestartet")
@@ -70,7 +70,7 @@ class VoiceNode(Node):
         self.save_and_finish(person, conversation_text, last_voice_emb)
 
     def record(self) -> dict | None:
-        result = self.call_service(self.mic_client, STT.Request(), timeout=60.0) # Länger warten, da Person vielleicht lange spricht
+        result = self.call_service(self.mic_client, Listen.Request(), timeout=60.0) # Länger warten, da Person vielleicht lange spricht
         if result and result.success:
             return {
                 "transcript": result.transcript,
@@ -108,7 +108,7 @@ class VoiceNode(Node):
             self.call_service(self.db_create_guest_client, req)
 
         self.conversation_running = False
-        self.conv_done_pub.publish(Empty())
+        self.conv_done_pub.publish(String())  # data nicht gesetzt → data="" (leer)
         self.get_logger().info("Gespräch gespeichert! Warte auf nächste Person...")
 
     def speak(self, text: str):

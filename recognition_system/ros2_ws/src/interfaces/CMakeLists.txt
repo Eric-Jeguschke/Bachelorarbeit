@@ -10,7 +10,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/CreateGuest.srv"
   "srv/FindByVoice.srv"
   "srv/RetrieveContext.srv"
-  "srv/STT.srv"
+  "srv/Listen.srv"
   "srv/TTS.srv"
   "srv/UpdateGuest.srv"
   DEPENDENCIES std_msgs

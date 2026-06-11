@@ -6,7 +6,7 @@ import soundfile as sf
 
 from openai import OpenAI
 from rclpy.node import Node
-from interfaces.srv import STT
+from interfaces.srv import Listen
 from microphone.voice_embedder import VoiceEmbedder
 from rclpy.executors import MultiThreadedExecutor
 
@@ -17,7 +17,7 @@ class MicrophoneNode(Node):
         self.client = OpenAI(base_url="https://models.mylab.th-luebeck.dev/v1", api_key="-")
         self.voice_embedder = VoiceEmbedder()
         self.voice_embedder.load()
-        self.create_service(STT, "~/stt", self.handle_stt)
+        self.create_service(Listen, "~/stt", self.handle_stt)
         self.get_logger().info("Microphone node gestartet")
 
     def handle_stt(self, request, response):
@@ -43,7 +43,7 @@ class MicrophoneNode(Node):
             response.voice_emb = self.voice_embedder.embed_from_pcm(audio, 16000).tolist()
             response.success = True
         except Exception as error:
-            self.get_logger().error(f"STT fehlgeschlagen: {error}")
+            self.get_logger().error(f"Listen fehlgeschlagen: {error}")
             response.success = False
             response.voice_emb = []
         return response
@@ -67,7 +67,7 @@ class MicrophoneNode(Node):
         with sd.InputStream(samplerate=16000, channels=1, dtype="float32", blocksize=1024) as stream:
             while time.time() < end:
                 data, _ = stream.read(1024)  # blockiert bis 1024 Samples bereit sind, dann eine Iteration
-                if np.abs(data).mean() > 0.01: # abs = Betrag, ohne wäre der Mittelwert immer nahe 0, da positive und negative Werte sich ausgleichen würden. Schwellenwert bei float32 zwischen 0.0 und 1.0
+                if np.abs(data).mean() > 0.01: # abs = Betrag, ohne wäre der Mittelwert immer nahe 0, da positive und negative Werte sich ausgleichen würden. Schwellenwert bei float32 zwischen -1.0 und 1.0
                     if not started:
                         started = True
                         self.get_logger().info("Sprache erkannt. Aufnahme läuft...")
