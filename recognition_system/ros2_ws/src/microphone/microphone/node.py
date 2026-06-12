@@ -39,8 +39,11 @@ class MicrophoneNode(Node):
                 sf.write("/tmp/recording.wav", audio, 16000)
                 file_path = "/tmp/recording.wav"
 
+            self.get_logger().info("Transkribiere...")
             response.transcript = self.transcribe(file_path)
+            self.get_logger().info(f"Transkription: '{response.transcript}'. Berechne Voice-Embedding...")
             response.voice_emb = self.voice_embedder.embed_from_pcm(audio, 16000).tolist()
+            self.get_logger().info(f"Voice-Embedding berechnet.")
             response.success = True
         except Exception as error:
             self.get_logger().error(f"Listen fehlgeschlagen: {error}")
@@ -76,6 +79,8 @@ class MicrophoneNode(Node):
                 elif started:
                     frames.append(data)
 
+        if started:
+            self.get_logger().info("Aufnahme beendet.")
         return frames, started
 
 
@@ -89,6 +94,4 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
-        node.destroy_node()
-        if rclpy.ok():
-            rclpy.shutdown()
+        rclpy.shutdown()

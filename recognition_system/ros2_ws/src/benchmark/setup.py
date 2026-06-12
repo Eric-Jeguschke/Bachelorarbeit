@@ -24,7 +24,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'run = benchmark.run:main',
+            'run_benchmark = benchmark.run_benchmark:main',
         ],
     },
 )

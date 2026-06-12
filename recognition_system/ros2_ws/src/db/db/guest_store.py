@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 from db.db import get_profiles_table, get_episodes_table, get_episode_keywords_table, get_memories_table
 
 # LanceDB Vektor-Suche: https://docs.lancedb.com/search/vector-search
-def find_by_voice(voice_vector: list, threshold: float = 0.4) -> dict | None:
+def find_by_voice(voice_vector: list, threshold: float = 0.5) -> dict | None:
     results = (
         get_profiles_table()
         .search(voice_vector, vector_column_name="voice_emb")
@@ -18,9 +18,16 @@ def find_by_voice(voice_vector: list, threshold: float = 0.4) -> dict | None:
         .limit(1)
         .to_list()
     )
-    if not results or float(results[0]["_distance"]) > threshold:
+    if not results:
         return None
-    return results[0]
+    distance = float(results[0]["_distance"])
+    recognized = 'erkannt' if distance <= threshold else 'unbekannt'
+    logger.info(f"Beste Voice-Match-Distance: {distance:.3f}")
+    logger.info(f"Threshold: {threshold} → {recognized}")
+    if distance > threshold:
+        return None
+    else:
+        return results[0]
 
 def create_guest(name: str, voice_emb: list, episode_json: str, memory_json: str, text_embedder: Callable[[str], list[float]]) -> str:
     if len(voice_emb) != 256:
@@ -52,7 +59,7 @@ def update_guest(guest_id: str, name: str, voice_emb: list, episode_json: str, m
     if profile:
         old_voice_emb = np.array(profile[0]["voice_emb"], dtype=np.float32)
         new_voice_emb = np.array(voice_emb, dtype=np.float32)
-        updated_voice_emb = 0.2 * new_voice_emb + 0.8 * old_voice_emb
+        updated_voice_emb = 0.4 * new_voice_emb + 0.6 * old_voice_emb
         values["voice_emb"] = updated_voice_emb.tolist()
     get_profiles_table().update(where=f"guest_id = '{guest_id}'", values=values)
     if not add_episode(guest_id, episode_json, text_embedder):

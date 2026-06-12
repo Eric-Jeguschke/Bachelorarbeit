@@ -36,6 +36,7 @@ class RecognitionNode(Node):
                 self.start_listening = True # Aufnahme ist fehlgeschlagen, versuche nochmal
                 continue
 
+            self.get_logger().info("Suche Person in Datenbank...")
             req = FindByVoice.Request()
             req.voice_emb = rec.voice_emb
             result = self.call_service(self.db_client, req, timeout=5.0)
@@ -75,6 +76,4 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
-        node.destroy_node()
-        if rclpy.ok():
-            rclpy.shutdown()
+        rclpy.shutdown()
