@@ -6,6 +6,7 @@ torch
 lancedb
 pyarrow
 sentence-transformers<4.0
+pylance
 
 # Mikrofon
 numpy
@@ -15,3 +16,4 @@ librosa
 
 # LLM / STT / TTS API
 openai
+json-repair

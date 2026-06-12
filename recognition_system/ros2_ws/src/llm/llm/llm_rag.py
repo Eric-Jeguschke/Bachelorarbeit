@@ -1,5 +1,6 @@
 import json
 
+from json_repair import repair_json
 from openai import OpenAI
 
 MEMORY_PROMPT = """Du analysierst ein Gespräch zwischen einem Roboter und einer Person.
@@ -57,8 +58,11 @@ class RAGModule:
                 temperature=0.1, # Eher deterministische Antworten, da konkrete Informationen extrahiert werden sollen
             )
             content = response.choices[0].message.content.strip()
-            json.loads(content) # Prüfen, ob es ein valides JSON Format hat
-            return content.strip()
+            if not content:
+                return "{}"
+            repaired = repair_json(content)
+            json.loads(repaired)  # sicherstellen dass es valides JSON ist
+            return repaired
         except Exception as e:
             self.logger.error(f"RAG-Extraktion fehlgeschlagen: {e}")
             return "{}"

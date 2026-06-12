@@ -31,7 +31,7 @@ class RecognitionNode(Node):
             self.start_listening = False
 
             self.get_logger().info("Nehme Stimme auf...")
-            rec = self.call_service(self.mic_client, Listen.Request(), timeout=40.0)
+            rec = self.call_service(self.mic_client, Listen.Request(), timeout=60.0)
             if not rec or not rec.success or not rec.voice_emb:
                 self.start_listening = True # Aufnahme ist fehlgeschlagen, versuche nochmal
                 continue
@@ -41,6 +41,8 @@ class RecognitionNode(Node):
             result = self.call_service(self.db_client, req, timeout=5.0)
 
             msg = PersonDetected()
+            msg.transcript = rec.transcript
+            msg.voice_emb = rec.voice_emb
             if result and result.found:
                 msg.found = True
                 msg.guest_id = result.guest_id

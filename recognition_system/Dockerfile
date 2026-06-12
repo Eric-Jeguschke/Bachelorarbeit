@@ -8,7 +8,6 @@ RUN apt-get update && apt-get install -y \
     libportaudio2 \
     libpulse0 \
     libasound2-plugins \
-    mpg123 \
     ros-jazzy-ros2launch \
     ros-jazzy-launch \
     ros-jazzy-launch-ros \

@@ -38,26 +38,33 @@ class VoiceNode(Node):
     def run_conversation(self, person: PersonDetected):
         self.llm.init_with_context(person.name, person.last_seen)
         conversation_text = ""
-        last_voice_emb = []
+        last_voice_emb = list(person.voice_emb) if person.voice_emb else []
+
+        # Erstes Transkript kommt direkt aus Recognition. Kein erneutes Aufnehmen nötig
+        first_transcript = person.transcript.strip() if person.transcript else ""
 
         while True:
-            audio = self.record()
-            if not audio:
-                self.get_logger().error("Keine Audio-Daten erhalten")
-                break
-
-            if audio["voice_emb"]:
-                last_voice_emb = audio["voice_emb"]
-
-            if not audio["transcript"]:
-                self.speak("Entschuldigung, ich habe dich leider nicht verstanden. Kannst du das wiederholen?")
+            if first_transcript:
+                spoken_text = first_transcript
+                first_transcript = "" # Hiernach soll nurnoch record() verwendet werden, damit nicht immer wieder das gleiche Transkript aus Recognition verwendet wird
+            else:
                 audio = self.record()
-                if not audio or not audio["transcript"]:
+                if not audio:
+                    self.get_logger().error("Keine Audio-Daten erhalten")
                     break
+
                 if audio["voice_emb"]:
                     last_voice_emb = audio["voice_emb"]
 
-            spoken_text = audio["transcript"]
+                if not audio["transcript"]:
+                    self.speak("Entschuldigung, ich habe dich leider nicht verstanden. Kannst du das wiederholen?")
+                    audio = self.record()
+                    if not audio or not audio["transcript"]:
+                        break
+                    if audio["voice_emb"]:
+                        last_voice_emb = audio["voice_emb"]
+                spoken_text = audio["transcript"]
+
             context = self.fetch_context(person.guest_id, spoken_text) if (person.found and person.guest_id) else ""
             user_message = spoken_text if not conversation_text else f"{spoken_text}\nZuvor gesprochener Text: {conversation_text}"
             reply, done = self.llm.chat(user_message, context)
@@ -113,9 +120,11 @@ class VoiceNode(Node):
         self.get_logger().info("Gespräch gespeichert! Warte auf nächste Person...")
 
     def speak(self, text: str):
+        self.get_logger().info(f"TTS: {text}")
         req = TTS.Request()
         req.text = text
         self.call_service(self.speaker_client, req)
+        time.sleep(1.0)  # kurz warten damit Mikrofon nicht sofort die Roboter-Stimme aufnimmt
 
     def call_service(self, client, request, timeout=15.0):
         future = client.call_async(request)

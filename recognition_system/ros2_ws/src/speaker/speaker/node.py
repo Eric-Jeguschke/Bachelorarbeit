@@ -35,7 +35,7 @@ class SpeakerNode(Node):
             input=text,
         ) as response:
             response.stream_to_file(speech_file_path)
-        subprocess.run(["mpg123", speech_file_path])
+        subprocess.run(["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", speech_file_path])
 
 
 def main(args=None):
