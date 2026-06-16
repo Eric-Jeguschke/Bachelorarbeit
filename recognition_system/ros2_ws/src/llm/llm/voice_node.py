@@ -107,6 +107,7 @@ class VoiceNode(Node):
             req.episode_json = episode_json
             req.memory_json = memory_json
             self.call_service(self.db_update_guest_client, req)
+            self.get_logger().info(f"Gast aktualisiert: name={person.name!r}, guest_id={person.guest_id}, memory={memory_json}, episode={episode_json}")
         else:
             req = CreateGuest.Request()
             req.voice_emb = voice_emb
@@ -114,6 +115,7 @@ class VoiceNode(Node):
             req.episode_json = episode_json
             req.memory_json = memory_json
             self.call_service(self.db_create_guest_client, req)
+            self.get_logger().info(f"Neuer Gast gespeichert: name={person.name!r}, memory={memory_json}, episode={episode_json}")
 
         self.conversation_running = False
         self.conv_done_pub.publish(String())  # data nicht gesetzt → data="" (leer)

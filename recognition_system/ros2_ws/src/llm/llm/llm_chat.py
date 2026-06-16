@@ -4,7 +4,7 @@ from openai import OpenAI
 
 class LLMChatModule:
     def __init__(self, logger):
-        self.client = OpenAI(base_url="https://models.mylab.th-luebeck.dev/v1", api_key="-")
+        self.client = OpenAI(base_url="https://models.mylab.th-luebeck.dev/v1", api_key="-", timeout=20.0)
         self.logger = logger
         self.system_prompt = ""
 
@@ -26,14 +26,9 @@ class LLMChatModule:
         )
 
     def chat(self, user_text: str, context: str) -> tuple[str, bool]:
-        '''
-
-        :param user_text:
-        :param context:
-        :return: text vom LLM und bool, ob [ENDE] im Text war (also Gespräch zu Ende)
-        '''
         system_prompt_context = self.system_prompt + (f"\nRelevante Erinnerungen:\n{context}" if context else "")
         try:
+            t0 = time.time()
             response = self.client.chat.completions.create(
                 model="chat-large",
                 messages=[
@@ -42,6 +37,7 @@ class LLMChatModule:
                 ],
                 temperature=0.7,
             )
+            self.logger.info(f"LLM-Antwort erhalten ({time.time() - t0:.1f}s)")
             raw = response.choices[0].message.content.strip()
             done = "[ENDE]" in raw
             reply = raw.replace("[ENDE]", "").strip()

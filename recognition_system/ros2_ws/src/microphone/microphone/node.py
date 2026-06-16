@@ -40,8 +40,9 @@ class MicrophoneNode(Node):
                 file_path = "/tmp/recording.wav"
 
             self.get_logger().info("Transkribiere...")
+            t0 = time.time()
             response.transcript = self.transcribe(file_path)
-            self.get_logger().info(f"Transkription: '{response.transcript}'. Berechne Voice-Embedding...")
+            self.get_logger().info(f"Transkription: {response.transcript} ({time.time() - t0:.1f}s). Berechne Voice-Embedding...")
             response.voice_emb = self.voice_embedder.embed_from_pcm(audio, 16000).tolist()
             self.get_logger().info(f"Voice-Embedding berechnet.")
             response.success = True

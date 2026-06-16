@@ -90,13 +90,13 @@ def add_episode(guest_id: str, episode_json: str, text_embedder: Callable[[str],
 
     keyword_table = get_episode_keywords_table()
     for keyword in keywords:
-        keyword_table.add({
+        keyword_table.add([{
             "keyword_id": str(uuid.uuid4()),
             "episode_id": episode_id,
             "guest_id": guest_id,
             "keyword": keyword,
             "keyword_emb": text_embedder(keyword),
-        })
+        }])
     return True
 
 
@@ -111,13 +111,13 @@ def update_memories(guest_id: str, memory_json: str, text_embedder: Callable[[st
         for fact in facts:
             if not (memory_table.search()
                     .where(f"guest_id = '{guest_id}' AND category = '{category}' AND fact = '{fact}'").to_list()):
-                memory_table.add({
+                memory_table.add([{
                     "memory_id": str(uuid.uuid4()),
                     "guest_id": guest_id,
                     "category": category,
                     "fact": fact,
                     "fact_emb": text_embedder(fact),
-                })
+                }])
     return True
 
 
