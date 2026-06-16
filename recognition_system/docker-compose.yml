@@ -1,0 +1,29 @@
+version: "3"
+
+# Audio-Mounts orientieren sich am offiziellen pib-backend-Setup.
+# https://github.com/pib-rocks/pib-backend/blob/main/docker-compose.yaml
+# Der PIB-Roboter läuft mit PulseAudio, daher wird der Pulse-Socket des Hosts in den Container
+# durchgereicht statt direkt auf /dev/snd zuzugreifen.
+services:
+  recognition_system:
+    image: ros2_ws_image
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ros2_system
+    privileged: true
+    environment:
+      - PULSE_SERVER=unix:${XDG_RUNTIME_DIR:-/run/user/1000}/pulse/native
+    volumes:
+      - hf_cache:/root/.cache/huggingface
+      - ${HOME}/robot-db:/db/storage
+      - /etc/machine-id:/etc/machine-id
+      - ${XDG_RUNTIME_DIR:-/run/user/1000}/pulse/native:${XDG_RUNTIME_DIR:-/run/user/1000}/pulse/native
+      - /home/pib/.config/pulse/cookie:/root/.config/pulse/cookie
+    devices:
+      - /dev/snd:/dev/snd
+      - /dev/bus/usb:/dev/bus/usb1
+    restart: always
+
+volumes:
+  hf_cache:
