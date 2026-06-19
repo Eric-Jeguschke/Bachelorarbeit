@@ -1,4 +1,5 @@
 import subprocess
+import time
 
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
@@ -27,15 +28,33 @@ class SpeakerNode(Node):
         return response
 
     def speak(self, text: str):
-        speech_file_path = "/tmp/speech.mp3"
+        # https://github.com/remsky/Kokoro-FastAPI/wiki/HowTo-Opus
+        self.get_logger().info("Spiele Audio...")
+        ffplay = subprocess.Popen(
+            ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", "-"], # "-" → Audio-Daten von stdin lesen
+            stdin=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+
+        t0 = time.time()
         with self.client.audio.speech.with_streaming_response.create(
             model="xtts-v2",
             voice="fable",
             speed=1.1,
+            response_format="opus", # opus ist ein effizienter Codec für Streaming-Audio, der niedrige Latenz und gute Qualität bietet
             input=text,
         ) as response:
-            response.stream_to_file(speech_file_path)
-        subprocess.run(["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", speech_file_path])
+            first_chunk = True
+            for chunk in response.iter_bytes(chunk_size=1024):
+                if first_chunk:
+                    self.get_logger().info(f"Audio-Stream gestartet nach {time.time() - t0:.1f}s")
+                    first_chunk = False
+                ffplay.stdin.write(chunk)
+                ffplay.stdin.flush()
+            ffplay.stdin.close()
+            ffplay.wait()
+        self.get_logger().info(f"Audio abgespielt ({time.time() - t0:.1f}s)")
 
 
 def main(args=None):
@@ -48,7 +67,4 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
-        node.destroy_node()
-        if rclpy.ok():
-            rclpy.shutdown()
-
+        rclpy.shutdown()
