@@ -17,7 +17,7 @@ class VoiceEmbedder:
         model = Model.from_pretrained(self.model_name)
         self.model_instance = Inference(model, window="whole", device=torch.device(self.device))
         # PyTorch Warmup beim ersten Aufruf triggern, damit echte Aufnahmen sofort schnell sind
-        self.embed_from_pcm(np.zeros(1, dtype=np.float32), 16000)
+        self.embed_from_pcm(np.zeros(16000, dtype=np.float32), 16000)
 
     def embed_from_pcm(self, pcm: np.ndarray, sample_rate: int) -> np.ndarray:
         # 40 db muss vielleicht noch angepasst werden, damit nicht zu viel Stille übrig bleibt, aber auch nicht zu viel Sprache abgeschnitten wird
