@@ -39,8 +39,8 @@ class SpeakerNode(Node):
 
         t0 = time.time()
         with self.client.audio.speech.with_streaming_response.create(
-            model="xtts-v2",
-            voice="fable",
+            model="tts-1-hd",
+            voice="coral",
             speed=1.1,
             response_format="opus", # opus ist ein effizienter Codec für Streaming-Audio, der niedrige Latenz und gute Qualität bietet
             input=text,
