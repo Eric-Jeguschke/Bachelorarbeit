@@ -11,8 +11,8 @@ Paper über den Datensatz: https://www.robots.ox.ac.uk/~vgg/publications/2017/Na
 
 from pathlib import Path
 
-# Pfad zum VoxCeleb-Datensatz (anpassen falls nötig)
-VOXCELEB_ROOT = Path(r"C:\Studium\Semester 6\Bachelorarbeit\Datensatz\voxceleb")
+VOXCELEB_DIR = Path(r"C:\Studium\Semester 6\Bachelorarbeit\Datensatz\voxceleb")
+WAV_DIR = Path("/data/voxceleb/vox1_test_wav")
 
 
 def load_voxceleb1_veri_test() -> list[dict]:
@@ -21,9 +21,9 @@ def load_voxceleb1_veri_test() -> list[dict]:
     Liest eine VoxCeleb Trial-Datei und gibt eine Liste von {label, audio1, audio2} zurück
     """
     trials = []
-    wav_path = VOXCELEB_ROOT / "vox1_test_wav"
+    wav_path = VOXCELEB_DIR / "vox1_test_wav"
 
-    with open(VOXCELEB_ROOT / "meta" / "veri_test2.txt") as f:
+    with open(VOXCELEB_DIR / "meta" / "veri_test2.txt") as f:
         for row in f:
             split = row.strip().split()
             if len(split) < 3:
