@@ -22,11 +22,11 @@ def eer_compute(fpr: NDArray, tpr: NDArray, thresholds: NDArray) -> tuple[float,
 # https://www.nist.gov/system/files/documents/2016/10/07/sre16_eval_plan_v1.3.pdf
 # Adaptiert von Kaldi (Apache License 2.0):
 # https://github.com/kaldi-asr/kaldi/blob/master/egs/sre08/v1/sid/compute_min_dcf.py
-# fnrs:       False Negative Rates (FRR) für jeden Schwellenwert, berechnet aus 1 - TPR
-# fprs:       False Positive Rates (FAR) für jeden Schwellenwert, direkt aus roc_curve
-# p_target:   A-priori-Wahrscheinlichkeit, dass es der echte Sprecher ist (NIST-Standard: 0.01)
-# c_miss:     Kosten für fälschliche Ablehnung eines echten Sprechers (NIST-Standard: 1), desto höher, desto schwerwiegender ist es, einen echten Sprecher abzulehnen
-# c_fa:       Kosten für fälschliche Akzeptanz eines fremden Sprechers (NIST-Standard: 1), desto höher, desto schwerwiegender ist es, einen fremden Sprecher zu akzeptieren
+# fnrs:     False Negative Rates (FRR) für jeden Schwellenwert, berechnet aus 1 - TPR
+# fprs:     False Positive Rates (FAR) für jeden Schwellenwert, direkt aus roc_curve
+# p_target: A-priori-Wahrscheinlichkeit, dass es der echte Sprecher ist (NIST-Standard: 0.01)
+# c_miss:   Kosten für fälschliche Ablehnung eines echten Sprechers (NIST-Standard: 1), desto höher, desto schwerwiegender ist es, einen echten Sprecher abzulehnen
+# c_fa:     Kosten für fälschliche Akzeptanz eines fremden Sprechers (NIST-Standard: 1), desto höher, desto schwerwiegender ist es, einen fremden Sprecher zu akzeptieren
 def compute_min_dcf(fnrs: NDArray, fprs: NDArray, p_target: float, c_miss: float, c_fa: float) -> float:
     min_c_det = float("inf")
     for i in range(0, len(fnrs)):
