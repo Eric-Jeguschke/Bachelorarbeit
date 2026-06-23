@@ -17,3 +17,7 @@ librosa
 # LLM / STT / TTS API
 openai
 json-repair
+
+# Benchmark
+tabulate
+tqdm

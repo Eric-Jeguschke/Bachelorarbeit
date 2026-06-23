@@ -7,7 +7,7 @@ def compute_confusion(true_labels: list[int], distances: list[float], threshold:
 
      :param true_labels: Wahre Labels (1 = gleicher Sprecher, 0 = Fremder)
      :param distances: Cosine-Abstände zwischen Embeddings
-     :param threshold: Grenzwert –> Distanz <= threshold → gleicher Sprecher
+     :param threshold: Grenzwert –> (Distanz <= threshold) → gleicher Sprecher
      :return: (TP, TN, FP, FN)
      """
 
@@ -18,9 +18,10 @@ def compute_confusion(true_labels: list[int], distances: list[float], threshold:
     return tp, tn, fp, fn
 
 
-def find_best_threshold(true_labels: list[int], distances: list[float]) -> dict:
+def find_best_threshold(distances: list[float], true_labels: list[int]) -> dict:
     # roc_curve erwartet: höherer Score = positiver. Cosine-Distanz ist umgekehrt (kleiner = ähnlicher),
-    # daher Negation. Sonst liegt die ROC-Kurve unter der theoretischen Diagonalen.
+    # daher Negation. Sonst liegt die ROC-Kurve unter der theoretischen Diagonalen. Ohne Minus findet man den Threshold inf.
+    # roc_curve probiert jeden einzigartigen Wert in neg_distances als Threshold aus und berechnet entsprechend TPR/FPR.
     neg_distances = [-d for d in distances]
     fpr, tpr, thresholds = roc_curve(true_labels, neg_distances)
 
@@ -30,6 +31,6 @@ def find_best_threshold(true_labels: list[int], distances: list[float]) -> dict:
     idx = np.argmax(tpr - fpr)
     return {
         "threshold": round(float(-thresholds[idx]), 3), # Umwandeln in Cosine-Distanz, da roc_curve hier mit negierten Distanzen arbeitet
-        "tpr_%":     round(float(tpr[idx]) * 100, 2),
-        "fpr_%":     round(float(fpr[idx]) * 100, 2),
+        "tpr_%": round(float(tpr[idx]) * 100, 2),
+        "fpr_%": round(float(fpr[idx]) * 100, 2),
     }

@@ -17,3 +17,4 @@ soundfile~=0.13.1
 speechbrain~=1.1.0
 torch~=2.11.0+cu126
 tqdm~=4.67.3
+tabulate

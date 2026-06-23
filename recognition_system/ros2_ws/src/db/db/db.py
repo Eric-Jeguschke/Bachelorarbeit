@@ -1,7 +1,8 @@
 import lancedb
 import pyarrow as pa
+import os
 
-DEFAULT_DB_PATH = "/db/storage"
+DEFAULT_DB_PATH = os.environ.get("DB_PATH", "/db/storage") # Nutz "DB_PATH" Umgebungsvariable in run_benchmark.py
 
 # https://docs.lancedb.com/tables
 profiles_schema = pa.schema([

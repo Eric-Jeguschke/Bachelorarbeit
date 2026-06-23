@@ -155,6 +155,16 @@ def retrieve_context(guest_id: str, search_emb: list) -> list:
     return contexts
 
 
+def clear_db():
+    try:
+        get_profiles_table().delete("guest_id IS NOT NULL") # LanceDB fügt automatisch WHERE hinzu im SQL-Befehl
+        get_episodes_table().delete("guest_id IS NOT NULL")
+        get_episode_keywords_table().delete("guest_id IS NOT NULL")
+        get_memories_table().delete("guest_id IS NOT NULL")
+    except Exception:
+        pass
+
+
 def clean_old_entries():
     now = int(time.time())
     try:
