@@ -37,7 +37,8 @@ class SpeakerNode(Node):
             response_format="mp3",
             input=text,
         )
-        self.get_logger().info("TTS antwort erhalten. Spiele Audio...")
+        self.get_logger().info(f"TTS antwort erhalten ({time.time() - t0:.1f}s). Spiele Audio...")
+        t0 = time.time()
         subprocess.run(
             ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", "-"],
             input=audio.content,
