@@ -57,7 +57,7 @@ class RecognitionNode(Node):
 
     def on_conversation_done(self, msg: String):
         self.start_listening = True
-        self.get_logger().info(f"Gespräch beendet. Warte auf nächste Person...")
+        self.get_logger().info("Gespräch beendet. Warte auf nächste Person...")
 
     def call_service(self, client, request, timeout: float):
         future = client.call_async(request)

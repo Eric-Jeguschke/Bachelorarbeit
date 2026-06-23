@@ -44,7 +44,7 @@ class MicrophoneNode(Node):
             response.transcript = self.transcribe(file_path)
             self.get_logger().info(f"Transkription: {response.transcript} ({time.time() - t0:.1f}s). Berechne Voice-Embedding...")
             response.voice_emb = self.voice_embedder.embed_from_pcm(audio, 16000).tolist()
-            self.get_logger().info(f"Voice-Embedding berechnet.")
+            self.get_logger().info("Voice-Embedding berechnet.")
             response.success = True
         except Exception as error:
             self.get_logger().error(f"Listen fehlgeschlagen: {error}")

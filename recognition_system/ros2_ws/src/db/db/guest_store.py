@@ -5,9 +5,10 @@ import uuid
 from typing import Callable
 import numpy as np
 
+from db.db import get_profiles_table, get_episodes_table, get_episode_keywords_table, get_memories_table
+
 logger = logging.getLogger(__name__)
 
-from db.db import get_profiles_table, get_episodes_table, get_episode_keywords_table, get_memories_table
 
 # LanceDB Vektor-Suche: https://docs.lancedb.com/search/vector-search
 def find_by_voice(voice_vector: list, threshold: float = 0.5) -> dict | None:
