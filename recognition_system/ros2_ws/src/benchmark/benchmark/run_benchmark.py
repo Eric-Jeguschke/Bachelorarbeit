@@ -69,7 +69,7 @@ def main():
     output_dir = Path("/tmp/benchmark_results")
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    speakers = load_speakers(max_files=10)
+    speakers = load_speakers(max_files=10) # ist auf 10 Files begrenzt, damit der Benchmark nicht eine Stunde dauert sondern nur etwa 10 Minuten.
     embedder = VoiceEmbedder()
     embedder.load()
     speaker_embeddings = {}

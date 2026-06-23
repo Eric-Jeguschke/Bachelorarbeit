@@ -1,67 +1,54 @@
-﻿# Erkennungssystem – Bachelorarbeit
+﻿# Wiedererkennungssystem – Bachelorarbeit
 
-Sprachbasiertes Erkennungssystem für den PIB-Roboter. Identifiziert Personen anhand der Stimme, führt ein LLM-gestütztes Gespräch auf Deutsch und speichert Gesprächserinnerungen in einer Vektordatenbank.
+Sprachbasiertes Erkennungssystem für den PIB-Roboter. Identifiziert Personen anhand der Stimme, führt ein LLM-basiertes Gespräch auf Deutsch und speichert Gesprächserinnerungen in einer Vektordatenbank.
 
 Läuft vollständig auf CPU, kein CUDA erforderlich.
 
 ### Nodes
 
-- `recognition/node.py` – nimmt kontinuierlich Stimme auf, berechnet ein Stimm-Embedding und fragt die DB ab, publiziert die erkannte Person.
-- `db/node.py` – LanceDB-Vektordatenbank, sucht Personen per Stimm-Embedding (Cosine Distance, Threshold 0.4), verwaltet Gesprächsepisoden und Erinnerungen. 
-- `microphone/node.py` – nimmt Audio über ALSA auf (VAD via Lautstärkeschwelle), transkribiert mit Whisper (OpenAI API) und berechnet das Stimm-Embedding mit `pyannote/wespeaker-voxceleb-resnet34-LM` (256-dim, CPU). 
-- `llm/voice_node.py` – führt nach erkannter Person ein Gespräch auf Deutsch (LLM: `chat-large`), begrüßt bekannte Personen mit Namen und zeigt an, wie lange sie zuletzt gesehen wurden. Speichert am Ende Gesprächsprotokoll, Erinnerungen und aktualisiertes Stimm-Embedding (EMA).
-- `speaker/node.py` – Text-to-Speech mit OpenAI TTS API + ffplay.
+- **recognition/node.py** – Steuert den Erkennungsablauf: ruft **microphone/stt** auf, fragt die DB per Stimm-Embedding ab und publiziert das Ergebnis auf **/recognition/person_detected**. Wartet während eines laufenden Gesprächs auf **/llm/conversation_done**.  
+- **db/node.py** – LanceDB-Vektordatenbank, sucht Personen per Stimm-Embedding mittels Cosine Distance und speichert alles zu Personen und vorherigen Gesprächen. Text-Embeddings für RAG mit **intfloat/multilingual-e5-small** (384-dim).  
+- **microphone/node.py** – Nimmt Audio über PulseAudio auf, transkribiert mit **whisper-3-large** von mylab und berechnet das Stimm-Embedding mit **pyannote/wespeaker-voxceleb-resnet34-LM** (256-dim).  
+- **llm/voice_node.py** – Führt nach erkannter Person ein Gespräch auf Deutsch mit einem LLM von mylab. Ruft bei bekannten Personen gespeicherten Kontext mit RAG ab. Speichert am Ende Gesprächsprotokoll, Erinnerungen und aktualisiertes Stimm-Embedding (EMA, 60/40-Gewichtung).  
+- **speaker/node.py** – Text-to-Speech mit mylab  **tts-1-hd**. Audioausgabe läuft über ffplay.
 
-## Voraussetzungen
+### Voraussetzungen
 
 - Ubuntu-Terminal 22.04 in WSL2
 - Docker
 
-## System starten
-
-Produktiv läuft das System auf dem PIB-Roboter über `docker-compose`, für die Entwicklung unter Windows im Ubuntu-Terminal (WSL2). Beide nutzen PulseAudio für Mikrofon/Lautsprecher, nur die Mounts dorthin unterscheiden sich.
-
-### PIB-Roboter
+## Auf PIB-Roboter System starten
 
 Roboter am LAN-Kabel anschließen und IP-Adresse am Display ablesen. Dann von Windows-Terminal:
-
 ```powershell
 ssh pib@<IP-ADRESSE>
 ```
+Passwort: `pib`
 
-Passwort: `pib` (Standard-Login des PIB-Roboters)
-
-Repository klonen (einmalig):
-
+Repository klonen (einmalig:
 ```bash
-git clone git@git.mylab.th-luebeck.de:eric.jeguschke/bachelorarbeit.git
-cd <dein-repo>/recognition_system
+git clone git@git.mylab.th-luebeck.de:eric.jeguschke/bachelorarbeit.git # kann sein, dass es auch über https geklont werden muss 
+cd bachelorarbeit/recognition_system
 ```
 
 System starten:
-
 ```bash
 docker compose up --build
 ```
 
-Im Hintergrund laufen lassen bzw. stoppen:
+# Ubuntu-Terminal unter Windows (WSL2) System starten
 
-```bash
-docker compose up -d --build
-docker compose down
-```
-
-### Ubuntu-Terminal unter Windows (WSL2)
-
-Der Standard-WSL2-Kernel hat keinen USB-Audio-Treiber, direktes USB-Passthrough funktioniert also nicht. Stattdessen nutzt WSLg einen automatisch installierten PulseAudio-Server, der das Windows-Standard-Audiogerät per RDP-Protokoll durchreicht.
-
-Headset in Windows als Standard-Audiogerät setzen (Eingabe + Ausgabe), dann prüfen ob PulseAudio verfügbar ist. Danach:
+Der Standard-WSL2-Kernel hat keinen USB-Audio-Treiber, direktes USB durchreichen funktioniert also nicht. Stattdessen nutzt WSLg einen PulseAudio-Server, der das Windows-Standard-Audiogerät durchreicht.
+Headset in Windows als Standard-Audiogerät setzen (Eingabe + Ausgabe). Danach:
 
 ```bash
 cd "/mnt/c/Users/ericj/OneDrive/Dokumente/Studium/Semester 6/Bachelorarbeit/Repository/recognition_system"
+```
+```bash
 docker build -t ros2_ws_image .
-
-docker stop ros2_system; docker rm ros2_system; docker run -it --name ros2_system \
+```
+```bash
+docker stop ros2_system && docker rm ros2_system && docker run -it --name ros2_system \
   -v hf_cache:/root/.cache/huggingface \
   -v $HOME/robot-db:/db/storage \
   -e PULSE_SERVER=unix:/mnt/wslg/runtime-dir/pulse/native \
@@ -71,19 +58,16 @@ docker stop ros2_system; docker rm ros2_system; docker run -it --name ros2_syste
   ros2_ws_image
 ```
 
-Modelle (~1–2 GB) werden beim ersten Start heruntergeladen und im Volume gecacht.
-
 ## Benchmark (Sprechererkennung)
 
 In neuem Terminal Container:
 ```bash
 docker exec ros2_system bash -c "source /opt/ros/jazzy/setup.bash && source /ros2_ws/install/setup.bash && ros2 run benchmark run_benchmark"
-
 ```
 
 ## Datenbank anzeigen
 
-Während der Container läuft:
+Während Container läuft in neuem Terminal:
 
 ```bash
 docker exec ros2_system python3 /ros2_ws/src/db/db/show_db.py
