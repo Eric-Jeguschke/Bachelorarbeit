@@ -46,10 +46,10 @@ def collect_distances(enrolled_embeddings: dict, impostor_embeddings: dict) -> t
     return distances, labels
 
 
-def evaluate_at_n(speaker_embeddings: dict, n_enrolled: int, threshold: float) -> dict | None:
+def evaluate_n_speaker_enrolled(speaker_embeddings: dict, n_speaker_enrolled: int, threshold: float) -> dict | None:
     items = list(speaker_embeddings.items())
-    enrolled  = dict(items[:n_enrolled])
-    impostors = dict(items[n_enrolled:])
+    enrolled  = dict(items[:n_speaker_enrolled])
+    impostors = dict(items[n_speaker_enrolled:])
 
     clear_db()
     enroll(enrolled)
@@ -59,7 +59,7 @@ def evaluate_at_n(speaker_embeddings: dict, n_enrolled: int, threshold: float) -
     tpr = tp / (tp + fn)
     fpr = fp / (fp + tn)
     return {
-        "n": n_enrolled,
+        "n_speaker_enrolled": n_speaker_enrolled,
         "tpr_%": round(tpr * 100, 2),
         "fpr_%": round(fpr * 100, 2),
     }
@@ -89,10 +89,10 @@ def main():
     best_threshold = threshold_result["threshold"]
     print(f"Bester Threshold : {best_threshold}, TPR={threshold_result['tpr_%']}%  FPR={threshold_result['fpr_%']}%")
 
-    test_values = [1,2,3,4,5,7,10,13,16,20,25,30,35] # Anzahl der enrollten Sprecher, die getestet werden sollen. Insgesamt 40 Sprecher (VoxCeleb1 Test). Nicht enrollt = Impostor
+    test_n_speaker = [1,2,3,4,5,7,10,13,16,20,25,30,35] # Anzahl der enrollten Sprecher, die getestet werden sollen. Insgesamt 40 Sprecher (VoxCeleb1 Test). Nicht enrollt = Impostor
     results_by_n = [] # Wird eine Liste von Dict
-    for n in test_values:
-        r = evaluate_at_n(speaker_embeddings, n, best_threshold)
+    for n_speaker_enrolled in test_n_speaker:
+        r = evaluate_n_speaker_enrolled(speaker_embeddings, n_speaker_enrolled, best_threshold)
         if r is None:
             continue
         results_by_n.append(r)

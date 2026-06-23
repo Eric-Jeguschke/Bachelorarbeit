@@ -28,32 +28,22 @@ class SpeakerNode(Node):
         return response
 
     def speak(self, text: str):
-        # https://github.com/remsky/Kokoro-FastAPI/wiki/HowTo-Opus
-        self.get_logger().info("Spiele Audio...")
-        ffplay = subprocess.Popen(
-            ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", "-"], # "-" → Audio-Daten von stdin lesen
-            stdin=subprocess.PIPE,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
-        )
-
+        self.get_logger().info("Warte auf antwort von TTS...")
         t0 = time.time()
-        with self.client.audio.speech.with_streaming_response.create(
-            model="tts-1-hd",
-            voice="coral",
-            speed=1.1,
-            response_format="opus", # opus ist ein effizienter Codec für Streaming-Audio, der niedrige Latenz und gute Qualität bietet
+        audio = self.client.audio.speech.create(
+            model="xtts-v2",
+            voice="fable",   # https://www.youtube.com/watch?v=dG2H7dHRopc und https://wiki.mylab.th-luebeck.de/books/mylab-ki-plattform/page/andere-modelle-image-audio-etc
+            speed=1.0,
+            response_format="mp3",
             input=text,
-        ) as response:
-            first_chunk = True
-            for chunk in response.iter_bytes(chunk_size=1024):
-                if first_chunk:
-                    self.get_logger().info(f"Audio-Stream gestartet nach {time.time() - t0:.1f}s")
-                    first_chunk = False
-                ffplay.stdin.write(chunk)
-                ffplay.stdin.flush()
-            ffplay.stdin.close()
-            ffplay.wait()
+        )
+        self.get_logger().info("TTS antwort erhalten. Spiele Audio...")
+        subprocess.run(
+            ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", "-"],
+            input=audio.content,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
         self.get_logger().info(f"Audio abgespielt ({time.time() - t0:.1f}s)")
 
 
