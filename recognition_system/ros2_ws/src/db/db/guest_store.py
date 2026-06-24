@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 # LanceDB Vektor-Suche: https://docs.lancedb.com/search/vector-search
-def find_by_voice(voice_vector: list, threshold: float = 0.5) -> dict | None:
+def find_by_voice(voice_vector: list, threshold: float = 0.549) -> dict | None:
     results = (
         get_profiles_table()
         .search(voice_vector, vector_column_name="voice_emb")

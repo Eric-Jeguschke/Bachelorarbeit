@@ -45,10 +45,7 @@ Headset in Windows als Standard-Audiogerät setzen (Eingabe + Ausgabe). Danach:
 cd "/mnt/c/Users/ericj/OneDrive/Dokumente/Studium/Semester 6/Bachelorarbeit/Repository/recognition_system"
 ```
 ```bash
-docker build -t ros2_ws_image .
-```
-```bash
-docker stop ros2_system && docker rm ros2_system && docker run -it --name ros2_system \
+docker build -t ros2_ws_image . && docker stop ros2_system && docker rm ros2_system && docker run -it --name ros2_system \
   -v hf_cache:/root/.cache/huggingface \
   -v $HOME/robot-db:/db/storage \
   -e PULSE_SERVER=unix:/mnt/wslg/runtime-dir/pulse/native \
