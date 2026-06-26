@@ -6,7 +6,7 @@ from rclpy.node import Node
 from std_msgs.msg import String
 
 from interfaces.msg import PersonDetected
-from interfaces.srv import CreateGuest, UpdateGuest, Listen, RetrieveContext, TTS
+from interfaces.srv import CreateGuest, UpdateGuest, Listen, RetrieveContext, TTS, FindByVoice
 from llm.llm_chat import LLMChatModule
 from llm.llm_rag import RAGModule
 
@@ -21,6 +21,7 @@ class VoiceNode(Node):
         self.speaker_client = self.create_client(TTS, "/speaker/tts")
         self.db_create_guest_client = self.create_client(CreateGuest, "/db/create_guest")
         self.db_update_guest_client = self.create_client(UpdateGuest, "/db/update_guest")
+        self.db_find_guest_client = self.create_client(FindByVoice, "/db/find_by_voice")
         self.db_context_client = self.create_client(RetrieveContext, "/db/retrieve_context")
         self.conv_done_pub = self.create_publisher(String, "/llm/conversation_done", 1)  # 1 = Queue-Größe
         self.create_subscription(PersonDetected, "/recognition/person_detected", self.person_detected, 1)
@@ -36,54 +37,77 @@ class VoiceNode(Node):
         threading.Thread(target=self.run_conversation, args=(person,), daemon=True).start()
 
     def run_conversation(self, person: PersonDetected):
-        self.llm.init_with_context(person.name, person.last_seen)
-        conversation_text = ""
-        last_voice_emb = list(person.voice_emb) if person.voice_emb else []
+        try:
+            self.llm.init_with_context(person.name, person.last_seen)
+            conversation_text = ""
+            last_voice_emb = list(person.voice_emb) if person.voice_emb else []
+            prev_voice_emb: list = []  # vorletztes Embedding – besser als letztes, das oft nur "Tschüss" ist
+            reidentification = person.found  # True = schon erkannt, kein weiterer Versuch nötig
 
-        # Erstes Transkript kommt direkt aus Recognition. Kein erneutes Aufnehmen nötig
-        first_transcript = person.transcript.strip() if person.transcript else ""
+            # Erstes Transkript kommt direkt aus Recognition. Kein erneutes Aufnehmen nötig
+            first_transcript = person.transcript.strip() if person.transcript else ""
 
-        while True:
-            if first_transcript:
-                spoken_text = first_transcript
-                first_transcript = "" # Hiernach soll nurnoch record() verwendet werden, damit nicht immer wieder das gleiche Transkript aus Recognition verwendet wird
-            else:
-                audio = self.record()
-                if not audio:
-                    self.get_logger().error("Keine Audio-Daten erhalten")
+            while True:
+                if first_transcript:
+                    spoken_text = first_transcript
+                    first_transcript = ""  # Hiernach soll nurnoch record() verwendet werden, damit nicht immer wieder das gleiche Transkript aus Recognition verwendet wird
+                else:
+                    audio = self.record()
+                    if not audio:
+                        self.get_logger().error("Keine Audio-Daten erhalten")
+                        break
+
+                    if audio["voice_emb"]:
+                        prev_voice_emb = last_voice_emb # Vorheriges Embedding speichern, um es später als "bestes" zu verwenden, da das letzte häufig zu kurz für ein gutes Voice-Embedding ist.
+                        last_voice_emb = audio["voice_emb"]
+
+                        # Einmal im Gespräch nochmal versuchen Person zu erkennen. Embedding aus Begrüßung schlägt häufig fehl, da zu kurz. Deswegen längere aus richtigem Gespräch.
+                        if not reidentification:
+                            reidentification = True
+                            req = FindByVoice.Request()
+                            req.voice_emb = last_voice_emb
+                            result = self.call_service(self.db_find_guest_client, req, timeout=3.0)
+                            if result and result.found:
+                                person.found = True
+                                person.guest_id = result.guest_id
+                                person.name = result.name
+                                self.llm.init_with_context(person.name, person.last_seen)
+                                self.get_logger().info(f"Person im Gespräch erkannt: {result.name}")
+
+                    if not audio["transcript"]:
+                        self.speak("Entschuldigung, ich habe dich leider nicht verstanden. Kannst du das wiederholen?")
+                        audio = self.record()
+                        if not audio or not audio["transcript"]:
+                            break
+                        if audio["voice_emb"]:
+                            prev_voice_emb = last_voice_emb
+                            last_voice_emb = audio["voice_emb"]
+                    spoken_text = audio["transcript"]
+
+                context = self.fetch_context(person.guest_id, spoken_text) if (person.found and person.guest_id) else ""
+                user_message = spoken_text if not conversation_text else f"{spoken_text}\nZuvor gesprochener Text: {conversation_text}"
+                reply, done = self.llm.chat(user_message, context)
+                self.speak(reply)
+                conversation_text += f"Nutzer: {spoken_text}\nRoboter: {reply}\n"
+                if len(conversation_text) > 30000:  # Prompt nicht zu lang werden lassen
+                    conversation_text = conversation_text[-30000:]
+                if done:
                     break
 
-                if audio["voice_emb"]:
-                    last_voice_emb = audio["voice_emb"]
-
-                if not audio["transcript"]:
-                    self.speak("Entschuldigung, ich habe dich leider nicht verstanden. Kannst du das wiederholen?")
-                    audio = self.record()
-                    if not audio or not audio["transcript"]:
-                        break
-                    if audio["voice_emb"]:
-                        last_voice_emb = audio["voice_emb"]
-                spoken_text = audio["transcript"]
-
-            context = self.fetch_context(person.guest_id, spoken_text) if (person.found and person.guest_id) else ""
-            user_message = spoken_text if not conversation_text else f"{spoken_text}\nZuvor gesprochener Text: {conversation_text}"
-            reply, done = self.llm.chat(user_message, context)
-            self.speak(reply)
-            conversation_text += f"Nutzer: {spoken_text}\nRoboter: {reply}\n"
-            if len(conversation_text) > 30000:  # Prompt nicht zu lang werden lassen
-                conversation_text = conversation_text[-30000:]
-            if done:
-                break
-
-        if not conversation_text.strip():
-            self.get_logger().info("Kein Gespräch geführt. Nichts gespeichert.")
+            if conversation_text.strip():
+                best_emb = prev_voice_emb if prev_voice_emb else last_voice_emb
+                self.save_and_finish(person, conversation_text, best_emb)
+            else:
+                self.get_logger().info("Kein Gespräch geführt. Nichts gespeichert.")
+        except Exception as e:
+            self.get_logger().error(f"run_conversation fehlgeschlagen: {e}")
+        finally:
+            # Immer ausführen, auch bei Exception. Sonst bleibt conversation_running = True und recognition wartet ewig
             self.conversation_running = False
-            self.conv_done_pub.publish("")
-            return
-        self.save_and_finish(person, conversation_text, last_voice_emb)
+            self.conv_done_pub.publish(String())
 
     def record(self) -> dict | None:
-        result = self.call_service(self.mic_client, Listen.Request(), timeout=60.0) # Länger warten, da Person vielleicht lange spricht
+        result = self.call_service(self.mic_client, Listen.Request(), timeout=60.0)  # Länger warten, da Person vielleicht lange spricht
         if result and result.success:
             return {
                 "transcript": result.transcript,
@@ -104,6 +128,17 @@ class VoiceNode(Node):
         memory_json = self.rag.extract_memory(conversation)
         episode_json = self.rag.extract_episode(conversation)
 
+        # Wenn Person anfangs nicht erkannt wurde, mit besserem Embedding aus dem Gespräch nochmal versuchen
+        if not person.found and voice_emb:
+            req = FindByVoice.Request()
+            req.voice_emb = voice_emb
+            result = self.call_service(self.db_find_guest_client, req, timeout=3.0)
+            if result and result.found:
+                person.found = True
+                person.guest_id = result.guest_id
+                person.name = result.name
+                self.get_logger().info(f"Person nachträglich erkannt: {result.name}")
+
         if person.found and person.guest_id:
             req = UpdateGuest.Request()
             req.guest_id = person.guest_id
@@ -122,8 +157,6 @@ class VoiceNode(Node):
             self.call_service(self.db_create_guest_client, req)
             self.get_logger().info(f"Neuer Gast gespeichert: name={person.name!r}, memory={memory_json}, episode={episode_json}")
 
-        self.conversation_running = False
-        self.conv_done_pub.publish("")  # data nicht gesetzt → data="" (leer)
         self.get_logger().info("Gespräch gespeichert! Warte auf nächste Person...")
 
     def speak(self, text: str):
