@@ -75,6 +75,11 @@ class VoiceNode(Node):
             if done:
                 break
 
+        if not conversation_text.strip():
+            self.get_logger().info("Kein Gespräch geführt. Nichts gespeichert.")
+            self.conversation_running = False
+            self.conv_done_pub.publish("")
+            return
         self.save_and_finish(person, conversation_text, last_voice_emb)
 
     def record(self) -> dict | None:
@@ -118,7 +123,7 @@ class VoiceNode(Node):
             self.get_logger().info(f"Neuer Gast gespeichert: name={person.name!r}, memory={memory_json}, episode={episode_json}")
 
         self.conversation_running = False
-        self.conv_done_pub.publish(String())  # data nicht gesetzt → data="" (leer)
+        self.conv_done_pub.publish("")  # data nicht gesetzt → data="" (leer)
         self.get_logger().info("Gespräch gespeichert! Warte auf nächste Person...")
 
     def speak(self, text: str):

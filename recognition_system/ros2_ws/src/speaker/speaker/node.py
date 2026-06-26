@@ -32,9 +32,7 @@ class SpeakerNode(Node):
         t0 = time.time()
         audio = self.client.audio.speech.create(
             model="xtts-v2",
-            voice="fable", # https://www.youtube.com/watch?v=dG2H7dHRopc und https://wiki.mylab.th-luebeck.de/books/mylab-ki-plattform/page/andere-modelle-image-audio-etc
-            speed=1.0,
-            response_format="mp3",
+            voice="alloy", # https://www.youtube.com/watch?v=dG2H7dHRopc und https://wiki.mylab.th-luebeck.de/books/mylab-ki-plattform/page/andere-modelle-image-audio-etc
             input=text,
         )
         self.get_logger().info(f"TTS antwort erhalten ({time.time() - t0:.1f}s). Spiele Audio...")

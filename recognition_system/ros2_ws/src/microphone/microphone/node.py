@@ -1,4 +1,5 @@
 import math
+import subprocess
 import time
 import numpy as np
 import rclpy
@@ -43,6 +44,11 @@ class MicrophoneNode(Node):
             self.get_logger().info("Transkribiere...")
             t0 = time.time()
             response.transcript = self.transcribe(file_path)
+            if not response.transcript:
+                # Kein Embedding berechnen: ein Stille-Vektor würde die DB verfälschen
+                response.success = True
+                response.voice_emb = []
+                return response
             self.get_logger().info(f"Transkription: {response.transcript} ({time.time() - t0:.1f}s). Berechne Voice-Embedding...")
             response.voice_emb = self.voice_embedder.embed_from_pcm(audio, 16000).tolist()
             self.get_logger().info("Voice-Embedding berechnet.")
@@ -54,8 +60,28 @@ class MicrophoneNode(Node):
         return response
 
     def transcribe(self, file_path: str) -> str:
-        with open(file_path, "rb") as f:  # rb = read binary, nötig für Audio-Dateien
-            # Andere Sprachen sollten auch erkannt werden, da wir mit "language" dem Modell eigentlich nur einen Tipp geben
+        trimmed_path = "/tmp/recording_trimmed.wav"
+        # Stille am Anfang und Ende entfernen bevor Whisper aufgerufen wird.
+        # Verhindert Halluzinationen (z.B. "Vielen Dank."), die Whisper bei stillen Aufnahmen produziert.
+        # https://stackoverflow.com/questions/25697596/using-ffmpeg-with-silencedetect-to-remove-audio-silence
+        subprocess.run([
+            "ffmpeg", "-y", "-loglevel", "error", "-i", file_path,
+            # 1. silenceremove: Stille am Anfang entfernen. 2. areverse: Audio umkehren, damit das Ende vorne liegt.
+            # 3. silenceremove: Stille am  Ende entfernen(liegt jetzt vorne). 4. areverse: Audio zurückdrehen.
+            # start_periods=1: Filter entfernt nur den ersten Stille-Abschnitt am Anfang und stoppt danach – Pausen in der Mitte werden nie erreicht.
+            # start_threshold= -40dB, alles leisere wird als keine Audio wahrgenommen
+            # start_silence=0.15: 150ms Puffer vor dem ersten Laut lassen, damit Anlaute nicht abgeschnitten werden.
+            # detection=peak: Lautstärke wird als Spitzenwert gemessen, nicht als Durchschnitt.
+            "-af", ("silenceremove=start_periods=1:start_threshold=-40dB:start_silence=0.15:detection=peak,"
+                    "areverse,silenceremove=start_periods=1:start_threshold=-40dB:start_silence=0.15:detection=peak,areverse"),
+            trimmed_path
+        ], check=True)  # check=True: wirft Exception bei ffmpeg-Fehler, wird von handle_stt's try/except aufgefangen
+        duration = sf.info(trimmed_path).duration
+        if duration < 0.4:  # Kürzer als 0.4s = kein echter Satz (z.B. "Mhh.", TTS-Echo)
+            self.get_logger().info(f"Audio nach Stille-Trim zu kurz ({duration:.2f}s). Übersprungen.")
+            return ""
+        with open(trimmed_path, "rb") as f:
+            # Andere Sprachen sollten auch erkannt werden, da wir mit "language" dem Modell nur einen Tipp geben
             return self.client.audio.transcriptions.create(model="whisper-3-large", file=f, language="de").text
 
     # https://stackoverflow.com/questions/18406570/python-record-audio-on-detected-sound
@@ -68,6 +94,7 @@ class MicrophoneNode(Node):
         frames = []
         started = False
         end = time.time() + 30
+        log_counter = 0
 
         with sd.InputStream(samplerate=16000, channels=1, dtype="float32", blocksize=1024) as stream:
             while time.time() < end:
@@ -75,8 +102,11 @@ class MicrophoneNode(Node):
                 sound_level = np.abs(data).mean()
                 # https://dsp.stackexchange.com/questions/8785/how-to-compute-dbfs
                 dbfs = 20 * math.log10(sound_level)  # dBFS: Skala mit 0 als Obergrenze , Stille geht gegen minus unendlich
-                self.get_logger().info(f"Pegel: {dbfs:.1f} dBFS")
-                if sound_level > 0.02:  # ungefähr -34 dBFS (20 * log10(0.02) = -34 dBFS). Alles unterhalb von -34 dBFS wird als Stille betrachtet.
+                log_counter += 1
+                if log_counter % 5 == 0:  # nur jeden 5ten Block loggen, sonst zu viel Output
+                    self.get_logger().info(f"Pegel: {dbfs:.1f} dBFS")
+                    log_counter = 0
+                if sound_level > 0.015:  # ungefähr -36,5 dBFS (20 * log10(0.015) = -36,5 dBFS). Alles unterhalb von -36,5 dBFS wird als Stille betrachtet.
                     if not started:
                         started = True
                         self.get_logger().info("Sprache erkannt. Aufnahme läuft...")

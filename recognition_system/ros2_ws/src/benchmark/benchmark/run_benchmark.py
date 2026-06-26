@@ -76,7 +76,6 @@ def main():
     for speaker_id, files in tqdm(speakers.items(), desc="Embeddings"):
         speaker_embeddings[speaker_id] = [embedder.embed_from_pcm(*sf.read(f, dtype="float32")) for f in files]
 
-    print("\nBestimme besten Threshold...", flush=True)  # flush=True: stdout ist in Docker gepuffert und wird ohen flush erst am Prozessende ausgegeben
     items     = list(speaker_embeddings.items())
     split_idx = len(items) // 2
     enrolled  = dict(items[:split_idx])   # z.B. {"id01": [emb0, emb1, ...], "id02": [...], ...}
@@ -87,7 +86,6 @@ def main():
     distances, labels = collect_distances(enrolled, impostors)
     threshold_result = find_best_threshold(distances, labels)
     best_threshold = threshold_result["threshold"]
-    print(f"Bester Threshold : {best_threshold}, TPR={threshold_result['tpr_%']}%  FPR={threshold_result['fpr_%']}%", flush=True)
 
     test_n_speaker = [1,2,3,4,5,7,10,13,16,20,25,30,35] # Anzahl der enrollten Sprecher, die getestet werden sollen. Insgesamt 40 Sprecher (VoxCeleb1 Test). Nicht enrollt = Impostor
     results_by_n = [] # Wird eine Liste von Dict
@@ -97,7 +95,8 @@ def main():
             continue
         results_by_n.append(r)
 
-    print(tabulate(results_by_n, headers="keys"), flush=True)
+    print(f"Bester Threshold : {best_threshold}, TPR={threshold_result['tpr_%']}%  FPR={threshold_result['fpr_%']}%")
+    print(tabulate(results_by_n, headers="keys"))
 
     clear_db()
 
