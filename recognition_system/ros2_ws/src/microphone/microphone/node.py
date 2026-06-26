@@ -1,3 +1,4 @@
+import math
 import time
 import numpy as np
 import rclpy
@@ -71,7 +72,11 @@ class MicrophoneNode(Node):
         with sd.InputStream(samplerate=16000, channels=1, dtype="float32", blocksize=1024) as stream:
             while time.time() < end:
                 data, _ = stream.read(1024)  # blockiert bis 1024 Samples bereit sind, dann eine Iteration
-                if np.abs(data).mean() > 0.01: # abs = Betrag, ohne wäre der Mittelwert immer nahe 0, da positive und negative Werte sich ausgleichen würden. Schwellenwert bei float32 zwischen -1.0 und 1.0
+                sound_level = np.abs(data).mean()
+                # https://dsp.stackexchange.com/questions/8785/how-to-compute-dbfs
+                dbfs = 20 * math.log10(sound_level)  # dBFS: Skala mit 0 als Obergrenze , Stille geht gegen minus unendlich
+                self.get_logger().info(f"Pegel: {dbfs:.1f} dBFS")
+                if sound_level > 0.02:  # ungefähr -34 dBFS (20 * log10(0.02) = -34 dBFS). Alles unterhalb von -34 dBFS wird als Stille betrachtet.
                     if not started:
                         started = True
                         self.get_logger().info("Sprache erkannt. Aufnahme läuft...")
