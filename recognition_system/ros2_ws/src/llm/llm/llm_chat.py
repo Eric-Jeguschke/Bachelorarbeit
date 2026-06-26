@@ -21,6 +21,8 @@ class LLMChatModule:
             "Antworte in maximal 2-3 Sätzen. Außer der Nutzer möchte explizit mehr Details," +
             "dann kannst du auch etwas ausführlicher antworten." +
             f"{name_text} {seen_info} " +
+            "Falls die Eingabe unklar ist oder du nicht weißt was gesagt wurde," +
+            "leite selbst ein neues, lockeres Gesprächsthema ein statt nachzufragen." +
             "Wenn das Gespräch natürlich zu Ende ist (Verabschiedung, Person möchte gehen)," +
             "beende deine Antwort mit [ENDE] in eckigen Klammern. Sonst lasse es weg."
         )

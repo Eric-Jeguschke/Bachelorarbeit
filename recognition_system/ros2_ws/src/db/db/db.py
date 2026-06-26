@@ -2,8 +2,6 @@ import lancedb
 import pyarrow as pa
 import os
 
-DEFAULT_DB_PATH = os.environ.get("DB_PATH", "/db/storage") # Nutz "DB_PATH" Umgebungsvariable in run_benchmark.py
-
 # https://docs.lancedb.com/tables
 profiles_schema = pa.schema([
     pa.field("guest_id", pa.string()),
@@ -37,7 +35,7 @@ memories_schema = pa.schema([
 
 
 def connect_db():
-    return lancedb.connect(DEFAULT_DB_PATH)
+    return lancedb.connect(os.environ.get("DB_PATH", "/db/storage")) # "DB_PATH" Umgebungsvariable wird in run_benchmark.py genutzt
 
 def get_profiles_table():
     return connect_db().create_table("profiles", schema=profiles_schema, exist_ok=True) # Erstellt oder öffnet DB_Table
