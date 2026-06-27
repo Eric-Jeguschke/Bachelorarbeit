@@ -13,6 +13,8 @@ class Pyannote:
 
     # https://huggingface.co/pyannote/embedding
     def load(self) -> None:
+        if self.device == "cuda" and not torch.cuda.is_available():
+            self.device = "cpu"
         model = Model.from_pretrained(self.model_name, token=self.token)
         model.eval()
         self.model_instance = Inference(model, window="whole", device=torch.device(self.device))
