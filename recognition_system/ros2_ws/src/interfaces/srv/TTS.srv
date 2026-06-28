@@ -1,4 +1,5 @@
 # Text-to-Speech
 string text
+float64 deadline
 ---
 bool success

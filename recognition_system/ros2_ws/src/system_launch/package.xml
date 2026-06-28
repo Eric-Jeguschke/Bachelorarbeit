@@ -12,7 +12,7 @@
   <exec_depend>microphone</exec_depend>
   <exec_depend>speaker</exec_depend>
   <exec_depend>recognition</exec_depend>
-  <exec_depend>llm</exec_depend>
+  <exec_depend>voice_ai</exec_depend>
 
   <export>
     <build_type>ament_python</build_type>

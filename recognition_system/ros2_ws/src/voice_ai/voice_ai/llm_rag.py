@@ -50,7 +50,7 @@ class RAGModule:
             return "{}"
         try:
             response = self.client.chat.completions.create(
-                model="chat-fast",
+                model="chat-default",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": conversation},

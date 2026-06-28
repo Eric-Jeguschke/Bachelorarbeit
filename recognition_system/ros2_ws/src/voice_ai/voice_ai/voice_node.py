@@ -7,8 +7,8 @@ from std_msgs.msg import String
 
 from interfaces.msg import PersonDetected
 from interfaces.srv import CreateGuest, UpdateGuest, Listen, RetrieveContext, TTS, FindByVoice
-from llm.llm_chat import LLMChatModule
-from llm.llm_rag import RAGModule
+from voice_ai.llm_chat import LLMChatModule
+from voice_ai.llm_rag import RAGModule
 
 
 class VoiceNode(Node):
@@ -23,7 +23,7 @@ class VoiceNode(Node):
         self.db_update_guest_client = self.create_client(UpdateGuest, "/db/update_guest")
         self.db_find_guest_client = self.create_client(FindByVoice, "/db/find_by_voice")
         self.db_context_client = self.create_client(RetrieveContext, "/db/retrieve_context")
-        self.conv_done_pub = self.create_publisher(String, "/llm/conversation_done", 1)  # 1 = Queue-Größe
+        self.conv_done_pub = self.create_publisher(String, "/voice_ai/conversation_done", 1)  # 1 = Queue-Größe
         self.create_subscription(PersonDetected, "/recognition/person_detected", self.person_detected, 1)
         self.conversation_running = False
         self.get_logger().info("Voice AI node gestartet")
@@ -75,7 +75,8 @@ class VoiceNode(Node):
                                 self.get_logger().info(f"Person im Gespräch erkannt: {result.name}")
 
                     if not audio["transcript"]:
-                        self.speak("Entschuldigung, ich habe dich leider nicht verstanden. Kannst du das wiederholen?")
+                        if not self.speak("Entschuldigung, ich habe dich leider nicht verstanden. Kannst du das wiederholen?"):
+                            break
                         audio = self.record()
                         if not audio or not audio["transcript"]:
                             break
@@ -87,7 +88,8 @@ class VoiceNode(Node):
                 context = self.fetch_context(person.guest_id, spoken_text) if (person.found and person.guest_id) else ""
                 user_message = spoken_text if not conversation_text else f"{spoken_text}\nZuvor gesprochener Text: {conversation_text}"
                 reply, done = self.llm.chat(user_message, context)
-                self.speak(reply)
+                if not self.speak(reply):
+                    break
                 conversation_text += f"Nutzer: {spoken_text}\nRoboter: {reply}\n"
                 if len(conversation_text) > 30000:  # Prompt nicht zu lang werden lassen
                     conversation_text = conversation_text[-30000:]
@@ -159,12 +161,21 @@ class VoiceNode(Node):
 
         self.get_logger().info("Gespräch gespeichert! Warte auf nächste Person...")
 
-    def speak(self, text: str):
+    def speak(self, text: str) -> bool:
         self.get_logger().info(f"TTS: {text}")
         req = TTS.Request()
         req.text = text
-        self.call_service(self.speaker_client, req)
-        time.sleep(1.0)  # kurz warten damit Mikrofon nicht sofort die Roboter-Stimme aufnimmt
+        req.deadline = time.time() + 25.0
+        result = self.call_service(self.speaker_client, req, timeout=25.0)
+        if not result or not result.success: # Wenn nach 15 Sekunden keine Antwort vom TTS-Service kommt, nochmal versuchen
+            self.get_logger().warning("TTS fehlgeschlagen, versuche nochmal...")
+            req.deadline = time.time() + 25.0  # Frische Deadline für Wiederholung
+            result = self.call_service(self.speaker_client, req, timeout=25.0)
+            if not result or not result.success:
+                self.get_logger().error("TTS zweimal fehlgeschlagen. Gespräch wird abgebrochen.")
+                return False
+        time.sleep(1.0)  # Kurz warten damit Mikrofon nicht den eventuellen Nachhall von der Sprachausgabe vom Roboter aufnimmt
+        return True
 
     def call_service(self, client, request, timeout=15.0):
         future = client.call_async(request)

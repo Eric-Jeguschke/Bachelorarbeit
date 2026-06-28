@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'llm'
+package_name = 'voice_ai'
 
 setup(
     name=package_name,
@@ -24,7 +24,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'voice_node = llm.voice_node:main',
+            'voice_node = voice_ai.voice_node:main',
         ],
     },
 )

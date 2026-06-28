@@ -8,5 +8,5 @@ def generate_launch_description():
         launch_ros.actions.Node(package="microphone", executable="microphone_node", output="screen"),
         launch_ros.actions.Node(package="speaker", executable="speaker_node", output="screen"),
         launch_ros.actions.Node(package="recognition", executable="recognition_node", output="screen"),
-        launch_ros.actions.Node(package="llm", executable="voice_node", output="screen"),
+        launch_ros.actions.Node(package="voice_ai", executable="voice_node", output="screen"),
     ])

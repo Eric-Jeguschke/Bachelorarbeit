@@ -32,7 +32,7 @@ class LLMChatModule:
         try:
             t0 = time.time()
             response = self.client.chat.completions.create(
-                model="chat-large",
+                model="chat-default",
                 messages=[
                     {"role": "system", "content": system_prompt_context},
                     {"role": "user", "content": user_text},

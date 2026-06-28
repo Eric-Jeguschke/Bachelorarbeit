@@ -15,7 +15,7 @@ class RecognitionNode(Node):
         self.db_client  = self.create_client(FindByVoice, "/db/find_by_voice")
         self.mic_client = self.create_client(Listen, "/microphone/stt")
         self.person_detected = self.create_publisher(PersonDetected, "/recognition/person_detected", 1)
-        self.create_subscription(String, "/llm/conversation_done", self.on_conversation_done, 1)
+        self.create_subscription(String, "/voice_ai/conversation_done", self.on_conversation_done, 1)
 
         # identify_loop ist kein ROS-Callback, daher startet MultiThreadedExecutor ihn nicht automatisch.
         # Manueller Thread nötig, damit spin() im Haupt-Thread weiterläuft und ROS-Callbacks (z.B. on_conversation_done) empfangen kann.

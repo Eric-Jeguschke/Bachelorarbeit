@@ -20,20 +20,22 @@ class SpeakerNode(Node):
 
     def handle_speak(self, request, response):
         try:
-            self.speak(request.text)
+            self.speak(request.text, request.deadline)
             response.success = True
         except Exception as error:
             self.get_logger().error(f"Sprachausgabe fehlgeschlagen: {error}")
             response.success = False
         return response
 
-    def speak(self, text: str):
+    def speak(self, text: str, deadline: float):
         self.get_logger().info("Warte auf antwort von TTS...")
         t0 = time.time()
+        timeout = deadline - time.time()
         audio = self.client.audio.speech.create(
             model="xtts-v2",
             voice="alloy", # https://www.youtube.com/watch?v=dG2H7dHRopc und https://wiki.mylab.th-luebeck.de/books/mylab-ki-plattform/page/andere-modelle-image-audio-etc
             input=text,
+            timeout=timeout,
         )
         self.get_logger().info(f"TTS antwort erhalten ({time.time() - t0:.1f}s). Spiele Audio...")
         t0 = time.time()
