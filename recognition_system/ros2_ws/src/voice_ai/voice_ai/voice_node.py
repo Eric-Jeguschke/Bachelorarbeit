@@ -174,7 +174,7 @@ class VoiceNode(Node):
             if not result or not result.success:
                 self.get_logger().error("TTS zweimal fehlgeschlagen. Gespräch wird abgebrochen.")
                 return False
-        time.sleep(1.0)  # Kurz warten damit Mikrofon nicht den eventuellen Nachhall von der Sprachausgabe vom Roboter aufnimmt
+        time.sleep(0.4)  # Kurz warten damit Mikrofon nicht den eventuellen Nachhall von der Sprachausgabe vom Roboter aufnimmt. Wert ist experimentell, da es stark von der Umgebung abhängt.
         return True
 
     def call_service(self, client, request, timeout=15.0):

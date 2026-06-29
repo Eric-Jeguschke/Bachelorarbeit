@@ -110,7 +110,7 @@ class MicrophoneNode(Node):
                     if not started:
                         started = True
                         self.get_logger().info("Sprache erkannt. Aufnahme läuft...")
-                    end = time.time() + 1.5 # Nach Ende der Sprache noch 1,5 Sekunden weiter aufnehmen
+                    end = time.time() + 2.0 # Nach Ende der Sprache noch 1,5 Sekunden weiter aufnehmen
                     frames.append(data)
                 elif started:
                     frames.append(data)
