@@ -122,7 +122,6 @@ def update_memories(guest_id: str, memory_json: str, text_embedder: Callable[[st
     return True
 
 
-
 def retrieve_context(guest_id: str, search_emb: list) -> list:
     contexts = []
     try:

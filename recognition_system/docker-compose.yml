@@ -6,11 +6,13 @@ version: "3"
 # durchgereicht statt direkt auf /dev/snd zuzugreifen.
 services:
   recognition_system:
-    image: ros2_ws_image
+    image: ros2_recognition_system
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ros2_system
+      cache_from:
+        - ros2_recognition_system:latest
+    container_name: ros2_recognition_system
     privileged: true
     environment:
       - PULSE_SERVER=unix:${XDG_RUNTIME_DIR:-/run/user/1000}/pulse/native
