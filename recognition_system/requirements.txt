@@ -14,9 +14,12 @@ sounddevice
 soundfile
 librosa
 
-# LLM / STT / TTS API
+# LLM / STT API
 openai
 json-repair
+
+# TTS
+piper-tts
 
 # Benchmark
 tabulate

@@ -1,20 +1,26 @@
+import io
 import subprocess
 import time
-
+import wave
+from pathlib import Path
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
-from openai import OpenAI
-
+from piper import PiperVoice
 from interfaces.srv import TTS
 
-# https://git.mylab.th-luebeck.de/kia/tutorials/mylab-examples/-/blob/main/notebooks/Model_Overview.ipynb?ref_type=heads
+# https://huggingface.co/Thorsten-Voice/Piper/tree/main
+MODEL_PATH = Path(__file__).resolve().parent / "models" / "de_DE-thorsten-medium.onnx"
+
+
 class SpeakerNode(Node):
+    """
+    PiperVoice Nutzung orientiert sich an:
+    https://github.com/OHF-Voice/piper1-gpl/blob/main/docs/API_PYTHON.md
+    """
     def __init__(self):
         super().__init__("speaker") # Name von ROS Node
-
-        self.client = OpenAI(base_url="https://models.mylab.th-luebeck.dev/v1", api_key="-")
-
+        self.voice = PiperVoice.load(MODEL_PATH)
         self.create_service(TTS, "~/tts", self.handle_speak)
         self.get_logger().info("Speaker node gestartet")
 
@@ -28,20 +34,18 @@ class SpeakerNode(Node):
         return response
 
     def speak(self, text: str, deadline: float):
-        self.get_logger().info("Warte auf antwort von TTS...")
+        self.get_logger().info("Erzeuge TTS-Audio über Piper...")
         t0 = time.time()
-        timeout = deadline - time.time()
-        audio = self.client.audio.speech.create(
-            model="xtts-v2",
-            voice="alloy", # https://www.youtube.com/watch?v=dG2H7dHRopc und https://wiki.mylab.th-luebeck.de/books/mylab-ki-plattform/page/andere-modelle-image-audio-etc
-            input=text,
-            timeout=timeout,
-        )
-        self.get_logger().info(f"TTS antwort erhalten ({time.time() - t0:.1f}s). Spiele Audio...")
+        buffer = io.BytesIO() # Puffer für WAV-Daten im Arbeitsspeicher
+        with wave.open(buffer, "wb") as wav_file:
+            self.voice.synthesize_wav(text, wav_file)
+        self.get_logger().info(f"TTS-Audio erzeugt ({time.time() - t0:.1f}s). Spiele Audio...")
         t0 = time.time()
+        # getvalue() statt getbuffer(): relativ egal hier, da nicht ständig geschrieben wird (kein Random Access)
+        # https://stackoverflow.com/questions/61319551/when-should-one-use-bytesio-getvalue-instead-of-getbuffer
         subprocess.run(
             ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", "-"],
-            input=audio.content,
+            input=buffer.getvalue(),
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
