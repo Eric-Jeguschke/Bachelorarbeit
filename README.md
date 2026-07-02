@@ -10,7 +10,7 @@ Läuft vollständig auf CPU, kein CUDA erforderlich.
 - **db/node.py** – LanceDB-Vektordatenbank, sucht Personen per Stimm-Embedding mittels Cosine Distance und speichert alles zu Personen und vorherigen Gesprächen. Text-Embeddings für RAG mit **intfloat/multilingual-e5-small** (384-dim).  
 - **microphone/node.py** – Nimmt Audio über PulseAudio auf, transkribiert mit **whisper-3-large** von mylab und berechnet das Stimm-Embedding mit **pyannote/wespeaker-voxceleb-resnet34-LM** (256-dim).  
 - **voiec_ai/voice_node.py** – Führt nach erkannter Person ein Gespräch auf Deutsch mit einem LLM von mylab. Ruft bei bekannten Personen gespeicherten Kontext mit RAG ab. Speichert am Ende Gesprächsprotokoll, Erinnerungen und aktualisiertes Stimm-Embedding (EMA, 60/40-Gewichtung).  
-- **speaker/node.py** – Text-to-Speech mit mylab  **tts-1-hd**. Audioausgabe läuft über ffplay.
+- **speaker/node.py** – Text-to-Speech lokal auf der CPU mit **Piper** (de_DE-thorsten-medium). Audioausgabe läuft über ffplay.
 
 ### Voraussetzungen
 
@@ -45,21 +45,21 @@ Headset in Windows als Standard-Audiogerät setzen (Eingabe + Ausgabe). Danach:
 cd "/mnt/c/Users/ericj/OneDrive/Dokumente/Studium/Semester 6/Bachelorarbeit/Repository/recognition_system"
 ```
 ```bash
-docker build -t ros2_ws_image . && docker stop ros2_system && docker rm ros2_system && docker run -it --name ros2_system \
+docker build -t ros2_recognition_system . && docker stop ros2_recognition_system && docker rm ros2_recognition_system && docker run -it --name ros2_recognition_system \
   -v hf_cache:/root/.cache/huggingface \
   -v $HOME/robot-db:/db/storage \
   -e PULSE_SERVER=unix:/mnt/wslg/runtime-dir/pulse/native \
   -v /mnt/wslg/runtime-dir/pulse:/mnt/wslg/runtime-dir/pulse \
   -v "/mnt/c/Studium/Semester 6/Bachelorarbeit/Datensatz/voxceleb":/data/voxceleb \
   --user $(id -u):$(id -g) \
-  ros2_ws_image
+  ros2_recognition_system
 ```
 
 ## Benchmark (Sprechererkennung)
 
 In neuem Terminal Container:
 ```bash
-docker exec ros2_system bash -c "source /opt/ros/jazzy/setup.bash && source /ros2_ws/install/setup.bash && ros2 run benchmark run_benchmark"
+docker exec ros2_recognition_system bash -c "source /opt/ros/jazzy/setup.bash && source /ros2_ws/install/setup.bash && ros2 run benchmark run_benchmark"
 ```
 
 ## Datenbank anzeigen
@@ -67,5 +67,5 @@ docker exec ros2_system bash -c "source /opt/ros/jazzy/setup.bash && source /ros
 Während Container läuft in neuem Terminal:
 
 ```bash
-docker exec ros2_system python3 /ros2_ws/src/db/db/show_db.py
+docker exec ros2_recognition_system python3 /ros2_ws/src/db/db/show_db.py
 ```

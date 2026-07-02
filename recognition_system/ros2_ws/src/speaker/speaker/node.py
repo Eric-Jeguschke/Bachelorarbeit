@@ -44,7 +44,9 @@ class SpeakerNode(Node):
         # getvalue() statt getbuffer(): relativ egal hier, da nicht ständig geschrieben wird (kein Random Access)
         # https://stackoverflow.com/questions/61319551/when-should-one-use-bytesio-getvalue-instead-of-getbuffer
         subprocess.run(
-            ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", "-"],
+            # -f wav: Format fest vorgeben, statt aus dem Stream zu erraten
+            # -i -: von stdin lesen (input)
+            ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", "-f", "wav", "-i", "-"],
             input=buffer.getvalue(),
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
