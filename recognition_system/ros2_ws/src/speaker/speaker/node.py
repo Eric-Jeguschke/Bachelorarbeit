@@ -40,13 +40,15 @@ class SpeakerNode(Node):
         with wave.open(buffer, "wb") as wav_file:
             self.voice.synthesize_wav(text, wav_file)
         self.get_logger().info(f"TTS-Audio erzeugt ({time.time() - t0:.1f}s). Spiele Audio...")
-        t0 = time.time()
+
         # getvalue() statt getbuffer(): relativ egal hier, da nicht ständig geschrieben wird (kein Random Access)
         # https://stackoverflow.com/questions/61319551/when-should-one-use-bytesio-getvalue-instead-of-getbuffer
+        # ffplay hat knacken beim Abspielen der Audio verursacht, deswegen zu ffmpeg gewechselt.
+        # -f wav -i -: WAV von stdin lesen (Bytes-Puffer statt Datei)
+        # -af apad=pad_dur=0.8: Stille anhängen, sonst schneidet ffmpeg beim Beenden das letzte Wort ab
+        # -f pulse default: Ausgabe direkt an PulseAudio. "default" ist der Stream-Name und Pflicht zu setzen.
         subprocess.run(
-            # -f wav: Format fest vorgeben, statt aus dem Stream zu erraten
-            # -i -: von stdin lesen (input)
-            ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", "-f", "wav", "-i", "-"],
+            ["ffmpeg", "-f", "wav", "-i", "-", "-af", "apad=pad_dur=0.8", "-f", "pulse", "default"],
             input=buffer.getvalue(),
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,

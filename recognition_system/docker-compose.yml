@@ -1,4 +1,4 @@
-version: "3"
+version: "3.8"
 
 # Audio-Mounts orientieren sich am offiziellen pib-backend-Setup.
 # https://github.com/pib-rocks/pib-backend/blob/main/docker-compose.yaml
