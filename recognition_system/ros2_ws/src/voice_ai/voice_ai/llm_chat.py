@@ -62,8 +62,10 @@ class LLMChatModule:
             )
             self.logger.info(f"LLM-Antwort erhalten ({time.time() - t0:.1f}s)")
             raw = response.choices[0].message.content.strip()
-            done = "[ENDE]" in raw
-            reply = raw.replace("[ENDE]", "").strip()
+            reply = raw.replace("[ENDE]", "").strip() # [ENDE] entfernen, damit es nicht vorgelesen wird
+            # Systemprompt verbietet [ENDE] bei Fragen, aber das LLM hält sich nicht zuverlässig daran.
+            # Deshalb zusätzlich Gespräch nie auf einer Frage beenden, damit eine Frage nie das Gespräch beendet.
+            done = "[ENDE]" in raw and "?" not in reply
             return reply, done
         except Exception as error:
             self.logger.error(f"LLM-Fehler: {error}")

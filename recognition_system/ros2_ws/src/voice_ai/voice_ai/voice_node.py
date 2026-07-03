@@ -153,7 +153,7 @@ class VoiceNode(Node):
             req.name = person.name
             req.episode_json = episode_json
             req.memory_json = memory_json
-            self.call_service(self.db_update_guest_client, req)
+            self.call_service(self.db_update_guest_client, req, timeout=5)
             self.get_logger().info(f"Gast aktualisiert: name={person.name!r}, guest_id={person.guest_id}, memory={memory_json}, episode={episode_json}")
         else:
             req = CreateGuest.Request()
@@ -161,7 +161,7 @@ class VoiceNode(Node):
             req.name = person.name
             req.episode_json = episode_json
             req.memory_json = memory_json
-            self.call_service(self.db_create_guest_client, req)
+            self.call_service(self.db_create_guest_client, req, timeout=5)
             self.get_logger().info(f"Neuer Gast gespeichert: name={person.name!r}, memory={memory_json}, episode={episode_json}")
 
         self.get_logger().info("Gespräch gespeichert! Warte auf nächste Person...")
@@ -170,15 +170,14 @@ class VoiceNode(Node):
         self.get_logger().info(f"TTS: {text}")
         req = TTS.Request()
         req.text = text
-        req.deadline = time.time() + 25.0
-        result = self.call_service(self.speaker_client, req, timeout=25.0)
-        if not result or not result.success: # Wenn nach 15 Sekunden keine Antwort vom TTS-Service kommt, nochmal versuchen
-            self.get_logger().warning("TTS fehlgeschlagen, versuche nochmal...")
-            req.deadline = time.time() + 25.0  # Frische Deadline für Wiederholung
-            result = self.call_service(self.speaker_client, req, timeout=25.0)
-            if not result or not result.success:
-                self.get_logger().error("TTS zweimal fehlgeschlagen. Gespräch wird abgebrochen.")
-                return False
+        # Fixer Timeout passt nicht, da die Sprechdauer von der Textlänge abhängt (LLM-Antworten sind unterschiedlich lang).
+        # Schätzung nach durchschnittlichem Sprechtempo (120 Wörter/Minute (https://de.wikipedia.org/wiki/Sprechtempo)) mit
+        # durchschnittlich 5,5 Zeichen/Wort (geschätzt): 120 * 5,5 / 60s = 11 Zeichen/Sekunde. Außerdem 10s Puffer.
+        timeout = len(text) / 11 + 10
+        result = self.call_service(self.speaker_client, req, timeout=timeout)
+        if not result or not result.success:
+            self.get_logger().error("TTS fehlgeschlagen. Gespräch wird abgebrochen.")
+            return False
         time.sleep(0.4)  # Kurz warten damit Mikrofon nicht den eventuellen Nachhall von der Sprachausgabe vom Roboter aufnimmt. Wert ist experimentell, da es stark von der Umgebung abhängt.
         return True
 

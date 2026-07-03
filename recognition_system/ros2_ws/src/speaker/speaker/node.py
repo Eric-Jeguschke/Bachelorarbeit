@@ -26,14 +26,14 @@ class SpeakerNode(Node):
 
     def handle_speak(self, request, response):
         try:
-            self.speak(request.text, request.deadline)
+            self.speak(request.text)
             response.success = True
         except Exception as error:
             self.get_logger().error(f"Sprachausgabe fehlgeschlagen: {error}")
             response.success = False
         return response
 
-    def speak(self, text: str, deadline: float):
+    def speak(self, text: str):
         self.get_logger().info("Erzeuge TTS-Audio über Piper...")
         t0 = time.time()
         buffer = io.BytesIO() # Puffer für WAV-Daten im Arbeitsspeicher
