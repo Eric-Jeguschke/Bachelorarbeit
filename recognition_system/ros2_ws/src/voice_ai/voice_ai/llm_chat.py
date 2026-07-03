@@ -8,6 +8,23 @@ class LLMChatModule:
         self.logger = logger
         self.system_prompt = ""
 
+    def warmup(self) -> None:
+        """
+        Erste Anfrage ans LLM ist oft deutlich langsamer.
+        Deshalb einmal Dummy-Anfrage senden, damit das erste echte Gespräch schnell antwortet.
+        :return:
+        """
+        try:
+            t0 = time.time()
+            self.client.chat.completions.create(
+                model="chat-default",
+                messages=[{"role": "user", "content": "Hallo"}],
+                max_tokens=1,
+            )
+            self.logger.info(f"LLM-Warmup abgeschlossen ({time.time() - t0:.2f}s)")
+        except Exception as error:
+            self.logger.error(f"LLM-Warmup fehlgeschlagen: {error}")
+
     def init_with_context(self, name: str, last_seen: int) -> None:
         name_text = f"Die Person heißt {name}. Begrüße mit dem Namen. Wenn der Name anonym ist, dann erwähne ihn nicht." if name else ""
         if last_seen:

@@ -12,20 +12,35 @@ from interfaces.srv import Listen
 from microphone.voice_embedder import VoiceEmbedder
 from rclpy.executors import MultiThreadedExecutor
 
-# https://python-sounddevice.readthedocs.io
 class MicrophoneNode(Node):
     def __init__(self):
         super().__init__("microphone")
         self.client = OpenAI(base_url="https://models.mylab.th-luebeck.dev/v1", api_key="-")
+        self.warmup_transcription()
         self.voice_embedder = VoiceEmbedder()
         self.voice_embedder.load()
         self.create_service(Listen, "~/stt", self.handle_stt)
         self.get_logger().info("Microphone node gestartet")
 
+    def warmup_transcription(self) -> None:
+        """
+        Erste Anfrage an das gehostete Whisper-Modell ist oft deutlich langsamer.
+        Deshalb einmal beim Start mit stillem Audio transkribieren, damit die erste echte Aufnahme schnell verarbeitet wird.
+        :return:
+        """
+        try:
+            t0 = time.time()
+            warmup_path = "/tmp/warmup.wav"
+            sf.write(warmup_path, np.zeros(16000, dtype=np.float32), 16000)
+            with open(warmup_path, "rb") as f:
+                self.client.audio.transcriptions.create(model="whisper-3-large", file=f, language="de")
+            self.get_logger().info(f"Transkriptions-Warmup abgeschlossen ({time.time() - t0:.2f}s)")
+        except Exception as error:
+            self.get_logger().error(f"Transkriptions-Warmup fehlgeschlagen: {error}")
+
     def handle_stt(self, request, response):
         try:
             if request.audio_path:
-                audio, _ = sf.read(request.audio_path, dtype="float32") # der zweite Rückgabewert ist die Sample-Rate, die wir hier aber nicht brauchen, da wir davon ausgehen, dass alle Audios 16kHz haben
                 file_path = request.audio_path
             else:
                 frames, speech_detected = self.record_audio()
@@ -41,16 +56,26 @@ class MicrophoneNode(Node):
                 sf.write("/tmp/recording.wav", audio, 16000)
                 file_path = "/tmp/recording.wav"
 
+            trimmed_path = self.trim_silence(file_path)
+            duration = sf.info(trimmed_path).duration
+            if duration < 0.4:  # Kürzer als 0,4s = kein echter Satz
+                self.get_logger().info(f"Audio nach Stille-Trim zu kurz ({duration:.2f}s). Übersprungen.")
+                response.success = True
+                response.transcript = ""
+                response.voice_emb = []
+                return response
+
             self.get_logger().info("Transkribiere...")
             t0 = time.time()
-            response.transcript = self.transcribe(file_path)
+            response.transcript = self.transcribe(trimmed_path)
             if not response.transcript:
                 # Kein Embedding berechnen: ein Stille-Vektor würde die DB verfälschen
                 response.success = True
                 response.voice_emb = []
                 return response
-            self.get_logger().info(f"Transkription: {response.transcript} ({time.time() - t0:.1f}s). Berechne Voice-Embedding...")
-            response.voice_emb = self.voice_embedder.embed_from_pcm(audio, 16000).tolist()
+            self.get_logger().info(f"Transkription: {response.transcript} ({time.time() - t0:.2f}s). Berechne Voice-Embedding...")
+            trimmed_audio, _ = sf.read(trimmed_path, dtype="float32") # der zweite Rückgabewert ist die Sample-Rate, die wir hier aber nicht brauchen, da wir davon ausgehen, dass alle Audios 16kHz haben
+            response.voice_emb = self.voice_embedder.embed_from_pcm(trimmed_audio, 16000).tolist()
             self.get_logger().info("Voice-Embedding berechnet.")
             response.success = True
         except Exception as error:
@@ -59,10 +84,10 @@ class MicrophoneNode(Node):
             response.voice_emb = []
         return response
 
-    def transcribe(self, file_path: str) -> str:
+    def trim_silence(self, file_path: str) -> str:
         trimmed_path = "/tmp/recording_trimmed.wav"
-        # Stille am Anfang und Ende entfernen bevor Whisper aufgerufen wird.
-        # Verhindert Halluzinationen (z.B. "Vielen Dank."), die Whisper bei stillen Aufnahmen produziert.
+        # Stille am Anfang und Ende entfernen, bevor Whisper und das Voice-Embedding sie verarbeiten.
+        # Verhindert Whisper-Halluzinationen (z.B. "Vielen Dank.") und verfälschte Embeddings bei stillen Aufnahmen.
         # https://stackoverflow.com/questions/25697596/using-ffmpeg-with-silencedetect-to-remove-audio-silence
         subprocess.run([
             "ffmpeg", "-y", "-loglevel", "error", "-i", file_path,
@@ -75,14 +100,19 @@ class MicrophoneNode(Node):
             "-af", ("silenceremove=start_periods=1:start_threshold=-40dB:start_silence=0.15:detection=peak,"
                     "areverse,silenceremove=start_periods=1:start_threshold=-40dB:start_silence=0.15:detection=peak,areverse"),
             trimmed_path
-        ], check=True)  # check=True: wirft Exception bei ffmpeg-Fehler, wird von handle_stt's try/except aufgefangen
-        duration = sf.info(trimmed_path).duration
-        if duration < 0.4:  # Kürzer als 0.4s = kein echter Satz (z.B. "Mhh.", TTS-Echo)
-            self.get_logger().info(f"Audio nach Stille-Trim zu kurz ({duration:.2f}s). Übersprungen.")
-            return ""
+        ], check=True)  # check=True: überprüft Status-Code und wirft Exception bei Fehler, wird von handle_stt try/except aufgefangen
+        return trimmed_path
+
+    def transcribe(self, trimmed_path: str) -> str:
         with open(trimmed_path, "rb") as f:
             # Andere Sprachen sollten auch erkannt werden, da wir mit "language" dem Modell nur einen Tipp geben
-            return self.client.audio.transcriptions.create(model="whisper-3-large", file=f, language="de").text
+            text = self.client.audio.transcriptions.create(model="whisper-3-large", file=f, language="de").text
+        # Whisper halluziniert bei stillem Audio häufig "Vielen Dank."
+        # Kommt "Vielen Dank" dagegen in einem längeren, echten Satz vor (z.B. "Vielen Dank, das war hilfreich"), ist es wahrscheinlich keine Halluzination.
+        if "Vielen Dank" in text and len(text) < 15:
+            self.get_logger().info(f"Wahrscheinlich Whisper-Halluzination erkannt und verworfen: {text}")
+            return ""
+        return text
 
     # https://stackoverflow.com/questions/18406570/python-record-audio-on-detected-sound
     # https://python-sounddevice.readthedocs.io/en/0.3.15/examples.html

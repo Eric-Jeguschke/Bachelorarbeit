@@ -15,6 +15,7 @@ class VoiceNode(Node):
     def __init__(self):
         super().__init__("voice_ai")
         self.llm = LLMChatModule(self.get_logger())
+        self.llm.warmup()
         self.rag = RAGModule(self.get_logger())
 
         self.mic_client = self.create_client(Listen, "/microphone/stt")
@@ -76,9 +77,11 @@ class VoiceNode(Node):
 
                     if not audio["transcript"]:
                         if not self.speak("Entschuldigung, ich habe dich leider nicht verstanden. Kannst du das wiederholen?"):
+                            self.get_logger().warning("Abbruch: TTS für Nachfrage fehlgeschlagen.")
                             break
                         audio = self.record()
                         if not audio or not audio["transcript"]:
+                            self.get_logger().warning("Abbruch: Beim zweiten Versuch Person zu verstehen keine Sprache erkannt.")
                             break
                         if audio["voice_emb"]:
                             prev_voice_emb = last_voice_emb
@@ -89,11 +92,13 @@ class VoiceNode(Node):
                 user_message = spoken_text if not conversation_text else f"{spoken_text}\nZuvor gesprochener Text: {conversation_text}"
                 reply, done = self.llm.chat(user_message, context)
                 if not self.speak(reply):
+                    self.get_logger().warning("Abbruch: TTS für LLM-Antwort fehlgeschlagen.")
                     break
                 conversation_text += f"Nutzer: {spoken_text}\nRoboter: {reply}\n"
                 if len(conversation_text) > 30000:  # Prompt nicht zu lang werden lassen
                     conversation_text = conversation_text[-30000:]
                 if done:
+                    self.get_logger().info("Gespräch regulär beendet (LLM hat [ENDE] gesendet).")
                     break
 
             if conversation_text.strip():

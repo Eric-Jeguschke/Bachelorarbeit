@@ -12,7 +12,6 @@ pylance
 numpy
 sounddevice
 soundfile
-librosa
 
 # LLM / STT API
 openai
