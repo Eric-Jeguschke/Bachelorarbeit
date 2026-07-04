@@ -14,7 +14,7 @@ class SpeechBrain:
     # https://speechbrain.readthedocs.io/en/latest/API/speechbrain.inference.speaker.html#speechbrain.inference.speaker.EncoderClassifier
     # https://speechbrain.readthedocs.io/en/latest/API/speechbrain.utils.run_opts.html#speechbrain.utils.run_opts.RunOptions
     def load(self) -> None:
-        """Lädt ein vortrainierte SpeechBrain-Model, welches bei __init__ fesgelegt wurde"""
+        """Lädt das vortrainierte SpeechBrain-Modell, welches bei __init__ festgelegt wurde"""
         if self.device == "cuda" and not torch.cuda.is_available():
             self.device = "cpu"
         device_name = "cuda:0" if self.device == "cuda" else self.device

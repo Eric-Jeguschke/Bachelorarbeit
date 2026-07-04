@@ -5,11 +5,11 @@ from numpy.typing import NDArray
 def eer_compute(fpr: NDArray, tpr: NDArray) -> float:
     """
     Bestimmt die Equal Error Rate (EER) aus einer ROC-Kurve.
-    EER: Schnittpunkt von FAR und FRR. "FAR = FPR (x-Achse der ROC-Kurve), TPR = y-Achse der ROC-Kurve.
-    FRR = 1 - TPR, steht nicht direkt auf der Kurve."
-    auf ROC-Kurve, wird umgerechnet). EER = (FAR + FRR) / 2 am Punkt wo |FAR - FRR| minimal.
+    EER: Schnittpunkt von FAR und FRR. FAR = FPR (x-Achse der ROC-Kurve), TPR = y-Achse der ROC-Kurve.
+    FRR = 1 - TPR wird daraus berechnet, steht nicht direkt auf der Kurve.
+    EER = (FAR + FRR) / 2 am Punkt wo |FAR - FRR| minimal.
     EXTRA INFO: FAR = FP/(FP+TN), FRR = FN/(FN+TP) = 1 - TPR.
-    labels: 1 = gleicher Sprecher,0 = verschiedene Sprecher
+    labels: 1 = gleicher Sprecher, 0 = verschiedene Sprecher
     scores: höher = ähnlicher.
     """
     far = fpr # FAR = False Acceptance Rate

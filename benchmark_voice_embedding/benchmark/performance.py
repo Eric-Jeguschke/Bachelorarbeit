@@ -30,5 +30,5 @@ def measure_specs(fn: Callable, *args: Any) -> tuple[Any, dict[str, float]]:
         "zeit_s": round(elapsed, 3),
         "ram_max_mb": round(max(samples), 2),
         "ram_avg_mb": round(float(np.mean(samples)), 2),
-        "cpu_%": round(proc.cpu_percent() / psutil.cpu_count(), 2), # normalisiert auf 0–100 % (psutil liefert Summe über alle Kerne)
+        "cpu_%": round(proc.cpu_percent() / psutil.cpu_count(), 2), # normalisiert auf 0-100 % (psutil liefert Summe über alle Kerne)
     }

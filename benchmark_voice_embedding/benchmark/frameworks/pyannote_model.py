@@ -15,7 +15,7 @@ class Pyannote:
 
     # https://huggingface.co/pyannote/embedding
     def load(self) -> None:
-        """Lädt ein vortrainierte Pyannote-Modell, welches bei __init__ fesgelegt wurde"""
+        """Lädt das vortrainierte Pyannote-Modell, welches bei __init__ festgelegt wurde"""
         if self.device == "cuda" and not torch.cuda.is_available():
             self.device = "cpu"
         model = Model.from_pretrained(self.model_name, token=self.token)

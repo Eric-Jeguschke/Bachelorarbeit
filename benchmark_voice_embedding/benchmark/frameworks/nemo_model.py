@@ -12,7 +12,7 @@ class NeMo:
 
     # https://docs.nvidia.com/nemo-framework/user-guide/latest/nemotoolkit/asr/speaker_recognition/results.html#speaker-embedding-extraction
     def load(self) -> None:
-        """Lädt ein vortrainierte NeMo-Modell, welches bei __init__ fesgelegt wurde"""
+        """Lädt das vortrainierte NeMo-Modell, welches bei __init__ festgelegt wurde"""
         if self.device == "cuda" and not torch.cuda.is_available():
             self.device = "cpu"
         self.model_instance = nemo_asr.models.EncDecSpeakerLabelModel.from_pretrained(
@@ -22,5 +22,5 @@ class NeMo:
 
     def embedding(self, path: str) -> np.ndarray:
         """Berechnet ein Sprecher-Embedding für eine Audiodatei"""
-        # get_embedding() gibt Tensor mit Form (1, emb_dim) zurück, .squeeze() → (emb_dim), .cpu().numpy() → NumPy-Array auf CPU
+        # get_embedding() gibt Tensor mit Form (1, emb_dim) zurück, .squeeze() -> (emb_dim), .cpu().numpy() -> NumPy-Array auf CPU
         return self.model_instance.get_embedding(path).squeeze().cpu().numpy()
