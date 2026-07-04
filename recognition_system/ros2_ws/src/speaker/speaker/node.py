@@ -43,12 +43,18 @@ class SpeakerNode(Node):
 
         # getvalue() statt getbuffer(): relativ egal hier, da nicht ständig geschrieben wird (kein Random Access)
         # https://stackoverflow.com/questions/61319551/when-should-one-use-bytesio-getvalue-instead-of-getbuffer
-        # ffplay hat knacken beim Abspielen der Audio verursacht, deswegen zu ffmpeg gewechselt.
-        # -f wav -i -: WAV von stdin lesen (Bytes-Puffer statt Datei)
-        # -af apad=pad_dur=0.8: Stille anhängen, sonst schneidet ffmpeg beim Beenden das letzte Wort ab
-        # -f pulse default: Ausgabe direkt an PulseAudio. "default" ist der Stream-Name und Pflicht zu setzen.
+        # ffplay hat knacken beim Abspielen der Audio verursacht, deswegen zu ffmpeg gewechselt. Hat auch noch knacken, aber weniger.
+        # -f wav -i -: WAV von stdin lesen
+        # -af apad=pad_dur=0.7: 0.7s Stille anhängen, damit der Puffer sicher leerläuft, bevor ffmpeg endet.
+        # -f pulse : Ausgabe direkt an PulseAudio.
+        # -buffer_duration 500: fester Puffer (500ms) statt PulseAudio selbst entscheiden zu lassen.
+        #   pad_dur (0.7s) ist bewusst größer als buffer_duration (500ms), damit Ende der Audio auch sauber zu Ende geht.
+        # -default: Ist der Stream-Name und Pflichtparameter bei -f pulse.
         subprocess.run(
-            ["ffmpeg", "-f", "wav", "-i", "-", "-af", "apad=pad_dur=0.8", "-f", "pulse", "default"],
+            [
+                "ffmpeg", "-f", "wav", "-i", "-", "-af", "apad=pad_dur=0.7",
+                "-f", "pulse", "-buffer_duration", "500", "default"
+            ],
             input=buffer.getvalue(),
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
