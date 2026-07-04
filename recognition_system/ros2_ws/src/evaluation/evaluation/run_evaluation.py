@@ -5,11 +5,18 @@ from tqdm import tqdm
 from tabulate import tabulate
 
 from microphone.voice_embedder import VoiceEmbedder
-from benchmark.load_dataset import load_speakers
-from benchmark.metrics import compute_confusion, find_best_threshold
+from evaluation.load_dataset import load_speakers, WAV_DIR_DOCKER_VOX1, WAV_DIR_DOCKER_VOX2
+from evaluation.metrics import compute_confusion, find_best_threshold
 from db.guest_store import find_by_voice, create_guest, clear_db
 
-os.environ["DB_PATH"] = "/tmp/benchmark_db"  # Gilt nur für diesen Prozess, wird danach automatisch gelöscht
+os.environ["DB_PATH"] = "/tmp/evaluation_db"  # Gilt nur für diesen Prozess, wird danach automatisch gelöscht
+
+
+def embed_speakers(embedder: VoiceEmbedder, speakers: dict) -> dict:
+    speaker_embeddings = {}
+    for speaker_id, files in tqdm(speakers.items(), desc="Embeddings"): # desc setzt die Beschriftung vor der tqdm-Fortschrittsanzeige
+        speaker_embeddings[speaker_id] = [embedder.embed_from_pcm(*sf.read(f, dtype="float32")) for f in files]
+    return speaker_embeddings
 
 
 def enroll(enrolled_embeddings: dict):
@@ -28,6 +35,7 @@ def collect_distances(enrolled_embeddings: dict, impostor_embeddings: dict) -> t
     labels = []
 
     # Echte Sprecher (Label 1): embs[1:] sind weitere Aufnahmen desselben Sprechers.
+    # embs[0] fehlt hier absichtlich, da es schon in enroll() in der DB gelandet ist.
     for embs in enrolled_embeddings.values():
         for emb in embs[1:]:
             result = find_by_voice(emb.tolist(), threshold=2.0)  # 0 sind identische Vektoren, 1.0 sind orthogonale Vektoren und 2.0 sind entgegengesetzte Vektoren. Deswegen gibt immer Ergebnis zurück.
@@ -66,28 +74,29 @@ def evaluate_n_speaker_enrolled(speaker_embeddings: dict, n_speaker_enrolled: in
 
 
 def main():
-    output_dir = Path("/tmp/benchmark_results")
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    speakers = load_speakers(max_files=10) # ist auf 10 Files begrenzt, damit der Benchmark nicht eine Stunde dauert sondern nur etwa 10 Minuten.
     embedder = VoiceEmbedder()
     embedder.load()
-    speaker_embeddings = {}
-    for speaker_id, files in tqdm(speakers.items(), desc="Embeddings"):
-        speaker_embeddings[speaker_id] = [embedder.embed_from_pcm(*sf.read(f, dtype="float32")) for f in files]
 
-    items     = list(speaker_embeddings.items())
-    split_idx = len(items) // 2
-    enrolled  = dict(items[:split_idx])   # z.B. {"id01": [emb0, emb1, ...], "id02": [...], ...}
-    impostors = dict(items[split_idx:])   # z.B. {"id03": [emb0, emb1, ...], "id04": [...], ...}
+    # Threshold-Kalibrierung auf VoxCeleb1. Alle 40 Sprecher werden genutzt. Aber nur 10 Files pro Sprecher, um die Laufzeit der Evaluation zu reduzieren.
+    calib_embeddings = embed_speakers(embedder, load_speakers(WAV_DIR_DOCKER_VOX1, max_files=10))
+
+    calib_items     = list(calib_embeddings.items())
+    calib_split_idx = len(calib_items) // 2
+    calib_enrolled  = dict(calib_items[:calib_split_idx])
+    calib_impostors = dict(calib_items[calib_split_idx:])
 
     clear_db()
-    enroll(enrolled)
-    distances, labels = collect_distances(enrolled, impostors)
-    threshold_result = find_best_threshold(distances, labels)
+    enroll(calib_enrolled)
+    calib_distances, calib_labels = collect_distances(calib_enrolled, calib_impostors)
+    threshold_result = find_best_threshold(calib_distances, calib_labels)
     best_threshold = threshold_result["threshold"]
 
-    test_n_speaker = [1,2,3,4,5,7,10,13,16,20,25,30,35] # Anzahl der enrollten Sprecher, die getestet werden sollen. Insgesamt 40 Sprecher (VoxCeleb1 Test). Nicht enrollt = Impostor
+    # VoxCeleb2 Test-Sprecher (118 Sprecher), ausschließlich für den die Evaluation mit n Speakern in Datenbank, um nicht
+    # die gleichen Sprecher wie bei der Threshold-Kalibrierung zu nutzen. Sonst wäre die Evaluation nicht aussagekräftig, da die DB schon auf diese Sprecher trainiert wurde.
+    speakers = load_speakers(WAV_DIR_DOCKER_VOX2, max_files=10) # ist auf 10 Files begrenzt, damit die Evaluation nicht zu lange dauert. Für die Evaluation reichen 10 Files pro Sprecher.
+    speaker_embeddings = embed_speakers(embedder, speakers)
+
+    test_n_speaker = [1,5,10,20,35,50,75,100] # Anzahl der enrollten Sprecher. Insgesamt 118 Sprecher (VoxCeleb2 Test). Nicht enrollt = Impostor
     results_by_n = [] # Wird eine Liste von Dict
     for n_speaker_enrolled in test_n_speaker:
         r = evaluate_n_speaker_enrolled(speaker_embeddings, n_speaker_enrolled, best_threshold)
@@ -95,8 +104,8 @@ def main():
             continue
         results_by_n.append(r)
 
-    print(f"Bester Threshold : {best_threshold}, TPR={threshold_result['tpr_%']}%  FPR={threshold_result['fpr_%']}%")
-    print(tabulate(results_by_n, headers="keys"))
+    print(f"Bester Threshold : {best_threshold}, TPR={threshold_result['tpr_%']}%  FPR={threshold_result['fpr_%']}%  (kalibriert auf 40 VoxCeleb1-Sprecher)")
+    print(tabulate(results_by_n, headers="keys")) # headers="keys" nimmt die Dict-Keys (n_speaker_enrolled, tpr_%, fpr_%) als Spaltenüberschriften
 
     clear_db()
 

@@ -20,6 +20,6 @@ json-repair
 # TTS
 piper-tts
 
-# Benchmark
+# Evaluation
 tabulate
 tqdm

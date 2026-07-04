@@ -57,9 +57,11 @@ docker build -t ros2_recognition_system . && docker stop ros2_recognition_system
 
 ## Benchmark (Sprechererkennung)
 
+Benötigt den VoxCeleb1+2-Datensatz unter **/data/voxceleb** im Container (siehe Mount im WSL2-Docker-run-Befehl oben). Funktioniert deshalb nur, wenn der Container über WSL2 gestartet wurde und der Datensatz lokal verfügbar ist. Nicht auf dem PIB-Roboter, da dort weder der Datensatz noch der Mount vorhanden sind.
+
 In neuem Terminal Container:
 ```bash
-docker exec ros2_recognition_system bash -c "source /opt/ros/jazzy/setup.bash && source /ros2_ws/install/setup.bash && ros2 run benchmark run_benchmark"
+docker exec ros2_recognition_system bash -c "source /opt/ros/jazzy/setup.bash && source /ros2_ws/install/setup.bash && ros2 run evaluation run_evaluation"
 ```
 
 ## Datenbank anzeigen
