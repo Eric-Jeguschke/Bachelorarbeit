@@ -8,7 +8,6 @@ Beispiel aus veri_test2.txt:
 
 Paper über den Datensatz: https://www.robots.ox.ac.uk/~vgg/publications/2017/Nagrani17/nagrani17.pdf
 """
-
 from pathlib import Path
 
 VOXCELEB_DIR = Path(r"C:\Studium\Semester 6\Bachelorarbeit\Datensatz\voxceleb")
@@ -17,7 +16,6 @@ WAV_DIR = Path("/data/voxceleb/vox1_test_wav")
 
 def load_voxceleb1_veri_test() -> list[dict]:
     """
-    VoxCeleb1-O: Standard Benchmark.
     Liest eine VoxCeleb Trial-Datei und gibt eine Liste von {label, audio1, audio2} zurück
     """
     trials = []

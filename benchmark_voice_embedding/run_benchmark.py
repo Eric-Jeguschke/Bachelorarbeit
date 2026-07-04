@@ -1,3 +1,11 @@
+"""
+Vergleicht die in der Konstanten MODELS gelisteten Sprecher-Embedding-Modelle auf den VoxCeleb1-Verifikations-Trials.
+Für jedes Modell zuerst Modell laden und anschließend für jeden Trial (Audiopaar) Embeddings berechnen und
+dabei Laufzeit, RAM- und CPU-Verbrauch messen (measure_specs).
+Cosine Similarity der Embeddings wird als List gesammelt und anschließend werden die
+Erkennungsmetriken (EER, minDCF, TAR@FAR) berechnet.
+Alle Ergebnisse der Modelle landen gesammelt in results/summary.json.
+"""
 import gc
 import os
 import json
@@ -12,9 +20,7 @@ from benchmark.load_dataset import load_voxceleb1_veri_test
 from benchmark.frameworks.nemo_model import NeMo
 from benchmark.frameworks.pyannote_model import Pyannote
 from benchmark.frameworks.speechbrain_model import SpeechBrain
-# from benchmark.frameworks.picovoice_model import Picovoice
 from sklearn.metrics.pairwise import cosine_similarity
-from benchmark.visualize import all_plots_generate
 
 load_dotenv()
 
@@ -83,4 +89,3 @@ os.makedirs("results", exist_ok=True) # Ordner für Ergebnisse erstellen, falls 
 with open("results/summary.json", "w", encoding="utf-8") as f:
     json.dump(results, f, indent=4)
 
-all_plots_generate("results")

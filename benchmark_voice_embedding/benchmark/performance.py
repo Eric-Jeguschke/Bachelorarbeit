@@ -7,6 +7,7 @@ from typing import Any, Callable
 proc = psutil.Process() # Einmal erstellen, nicht pro Aufruf
 
 def measure_specs(fn: Callable, *args: Any) -> tuple[Any, dict[str, float]]:
+    """Misst Laufzeit, RAM- und CPU-Verbrauch während der Ausführung von fn(*args). Hier ist fn die Embedding-Funktion eines Modells, args sind die Eingabedaten (z.B. Pfad zu einer WAV-Datei)."""
     proc.cpu_percent() # CPU-Delta-Zähler zurücksetzen
     samples = []
     sampling_done = threading.Event()

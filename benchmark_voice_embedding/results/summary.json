@@ -8,7 +8,6 @@
         "ram_avg_mb": 1656.9,
         "cpu_%": 6.12,
         "eer_%": 2.68,
-        "eer_schwelle": 0.232,
         "min_dcf": 0.302,
         "tar@far=1%": 93.575,
         "tar@far=5%": 98.729
@@ -22,7 +21,6 @@
         "ram_avg_mb": 2007.26,
         "cpu_%": 6.08,
         "eer_%": 0.819,
-        "eer_schwelle": 0.361,
         "min_dcf": 0.081,
         "tar@far=1%": 99.298,
         "tar@far=5%": 99.899
@@ -36,7 +34,6 @@
         "ram_avg_mb": 2165.16,
         "cpu_%": 6.01,
         "eer_%": 0.899,
-        "eer_schwelle": 0.28,
         "min_dcf": 0.11,
         "tar@far=1%": 99.213,
         "tar@far=5%": 99.894
@@ -50,7 +47,6 @@
         "ram_avg_mb": 1693.59,
         "cpu_%": 6.12,
         "eer_%": 1.048,
-        "eer_schwelle": 0.29,
         "min_dcf": 0.108,
         "tar@far=1%": 98.91,
         "tar@far=5%": 99.862
@@ -64,7 +60,6 @@
         "ram_avg_mb": 1625.83,
         "cpu_%": 48.95,
         "eer_%": 0.819,
-        "eer_schwelle": 0.335,
         "min_dcf": 0.134,
         "tar@far=1%": 99.335,
         "tar@far=5%": 99.952
@@ -78,7 +73,6 @@
         "ram_avg_mb": 1351.6,
         "cpu_%": 48.8,
         "eer_%": 1.292,
-        "eer_schwelle": 0.318,
         "min_dcf": 0.158,
         "tar@far=1%": 98.213,
         "tar@far=5%": 99.777
@@ -92,7 +86,6 @@
         "ram_avg_mb": 1242.24,
         "cpu_%": 48.91,
         "eer_%": 2.087,
-        "eer_schwelle": 0.431,
         "min_dcf": 0.237,
         "tar@far=1%": 95.889,
         "tar@far=5%": 99.239
@@ -106,7 +99,6 @@
         "ram_avg_mb": 1249.12,
         "cpu_%": 48.94,
         "eer_%": 1.101,
-        "eer_schwelle": 0.3,
         "min_dcf": 0.135,
         "tar@far=1%": 98.846,
         "tar@far=5%": 99.904
