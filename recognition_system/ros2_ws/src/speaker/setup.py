@@ -16,7 +16,7 @@ setup(
     zip_safe=True,
     maintainer='ericj',
     maintainer_email='eric.jeguschke@gmail.com',
-    description='Speaker package – TTS und Audio-Ausgabe Service',
+    description='Speaker package - TTS und Audio-Ausgabe Service',
     license='Apache-2.0',
     extras_require={'test': ['pytest']},
     entry_points={

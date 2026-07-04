@@ -1,4 +1,4 @@
-﻿# Wiedererkennungssystem – Bachelorarbeit
+﻿# Wiedererkennungssystem - Bachelorarbeit
 
 Sprachbasiertes Erkennungssystem für den PIB-Roboter. Identifiziert Personen anhand der Stimme, führt ein LLM-basiertes Gespräch auf Deutsch und speichert Gesprächserinnerungen in einer Vektordatenbank.
 
@@ -6,11 +6,11 @@ Läuft vollständig auf CPU, kein CUDA erforderlich.
 
 ### Nodes
 
-- **recognition/node.py** – Steuert den Erkennungsablauf: ruft **microphone/stt** auf, fragt die DB per Stimm-Embedding ab und publiziert das Ergebnis auf **/recognition/person_detected**. Wartet während eines laufenden Gesprächs auf **/voice_ai/conversation_done**.  
-- **db/node.py** – LanceDB-Vektordatenbank, sucht Personen per Stimm-Embedding mittels Cosine Distance und speichert alles zu Personen und vorherigen Gesprächen. Text-Embeddings für RAG mit **intfloat/multilingual-e5-small** (384-dim).  
-- **microphone/node.py** – Nimmt Audio über PulseAudio auf, transkribiert mit **whisper-3-large** von mylab und berechnet das Stimm-Embedding mit **pyannote/wespeaker-voxceleb-resnet34-LM** (256-dim).  
-- **voiec_ai/voice_node.py** – Führt nach erkannter Person ein Gespräch auf Deutsch mit einem LLM von mylab. Ruft bei bekannten Personen gespeicherten Kontext mit RAG ab. Speichert am Ende Gesprächsprotokoll, Erinnerungen und aktualisiertes Stimm-Embedding (EMA, 60/40-Gewichtung).  
-- **speaker/node.py** – Text-to-Speech lokal auf der CPU mit **Piper** (de_DE-thorsten-medium). Audioausgabe läuft über ffplay.
+- **recognition/node.py** - Steuert den Erkennungsablauf: ruft **microphone/stt** auf, fragt die DB per Stimm-Embedding ab und publiziert das Ergebnis auf **/recognition/person_detected**. Wartet während eines laufenden Gesprächs auf **/voice_ai/conversation_done**.  
+- **db/node.py** - LanceDB-Vektordatenbank, sucht Personen per Stimm-Embedding mittels Cosine Distance und speichert alles zu Personen und vorherigen Gesprächen. Text-Embeddings für RAG mit **intfloat/multilingual-e5-small** (384-dim).  
+- **microphone/node.py** - Nimmt Audio über PulseAudio auf, transkribiert mit **whisper-3-large** von mylab und berechnet das Stimm-Embedding mit **pyannote/wespeaker-voxceleb-resnet34-LM** (256-dim).  
+- **voiec_ai/voice_node.py** - Führt nach erkannter Person ein Gespräch auf Deutsch mit einem LLM von mylab. Ruft bei bekannten Personen gespeicherten Kontext mit RAG ab. Speichert am Ende Gesprächsprotokoll, Erinnerungen und aktualisiertes Stimm-Embedding (EMA, 60/40-Gewichtung).  
+- **speaker/node.py** - Text-to-Speech lokal auf der CPU mit **Piper** (de_DE-thorsten-medium). Audioausgabe läuft über ffplay.
 
 ### Voraussetzungen
 

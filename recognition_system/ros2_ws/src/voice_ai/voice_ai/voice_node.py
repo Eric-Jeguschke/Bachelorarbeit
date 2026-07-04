@@ -34,7 +34,7 @@ class VoiceNode(Node):
             return
         self.conversation_running = True
         # Eigener Thread nötig: run_conversation blockiert mit time.sleep() in call_service.
-        # Läuft run_conversation direkt im Callback, kann der Executor die Service-Response nicht verarbeiten → Deadlock.
+        # Läuft run_conversation direkt im Callback, kann der Executor die Service-Response nicht verarbeiten -> Deadlock.
         threading.Thread(target=self.run_conversation, args=(person,), daemon=True).start()
 
     def run_conversation(self, person: PersonDetected):
@@ -42,7 +42,7 @@ class VoiceNode(Node):
             self.llm.init_with_context(person.name, person.last_seen)
             conversation_text = ""
             last_voice_emb = list(person.voice_emb) if person.voice_emb else []
-            prev_voice_emb: list = []  # vorletztes Embedding – besser als letztes, das oft nur "Tschüss" ist
+            prev_voice_emb: list = []  # Vorletztes Embedding. Besser als letztes, das oft nur "Tschüss" ist
             reidentification = person.found  # True = schon erkannt, kein weiterer Versuch nötig
 
             # Erstes Transkript kommt direkt aus Recognition. Kein erneutes Aufnehmen nötig

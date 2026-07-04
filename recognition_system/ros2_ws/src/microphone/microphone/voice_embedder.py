@@ -20,7 +20,7 @@ class VoiceEmbedder:
 
     def embed_from_pcm(self, pcm: np.ndarray, sample_rate: int) -> np.ndarray:
         # Stille wird bereits entfernt, bevor pcm hier ankommt
-        pcm = pcm.squeeze()  # sounddevice gibt (samples, channels) zurück → squeeze zu (samples,)
-        waveform = torch.from_numpy(pcm).unsqueeze(0) # (samples,) → (1, samples) = (channels, samples) wie pyannote es erwartet
+        pcm = pcm.squeeze()  # sounddevice gibt (samples, channels) zurück -> squeeze zu (samples,)
+        waveform = torch.from_numpy(pcm).unsqueeze(0) # (samples,) -> (1, samples) = (channels, samples) wie pyannote es erwartet
         emb = self.model_instance({"waveform": waveform, "sample_rate": sample_rate})
         return np.array(emb).squeeze()

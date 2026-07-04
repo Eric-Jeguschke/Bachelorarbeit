@@ -93,7 +93,7 @@ class MicrophoneNode(Node):
             "ffmpeg", "-y", "-loglevel", "error", "-i", file_path,
             # 1. silenceremove: Stille am Anfang entfernen. 2. areverse: Audio umkehren, damit das Ende vorne liegt.
             # 3. silenceremove: Stille am  Ende entfernen(liegt jetzt vorne). 4. areverse: Audio zurückdrehen.
-            # start_periods=1: Filter entfernt nur den ersten Stille-Abschnitt am Anfang und stoppt danach – Pausen in der Mitte werden nie erreicht.
+            # start_periods=1: Filter entfernt nur den ersten Stille-Abschnitt am Anfang und stoppt danach. Pausen in der Mitte werden nicht entfernt.
             # start_threshold= -40dB, alles leisere wird als keine Audio wahrgenommen
             # start_silence=0.15: 150ms Puffer vor dem ersten Laut lassen, damit Anlaute nicht abgeschnitten werden.
             # detection=peak: Lautstärke wird als Spitzenwert gemessen, nicht als Durchschnitt.
@@ -118,7 +118,7 @@ class MicrophoneNode(Node):
     # https://python-sounddevice.readthedocs.io/en/0.3.15/examples.html
     def record_audio(self):
         """
-        Das Mikrofon misst Luftdruckschwankungen. Schall ist eine Druckwelle die abwechselnd Überdruck und Unterdruck erzeugt. Überdruck → positive Werte, Unterdruck → negative Werte. Stille = Luftdruck
+        Das Mikrofon misst Luftdruckschwankungen. Schall ist eine Druckwelle die abwechselnd Überdruck und Unterdruck erzeugt. Überdruck -> positive Werte, Unterdruck -> negative Werte. Stille = Luftdruck
         konstant = 0.
         """
         frames = []

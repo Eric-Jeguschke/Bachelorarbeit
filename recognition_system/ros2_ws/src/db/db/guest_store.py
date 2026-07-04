@@ -24,7 +24,7 @@ def find_by_voice(voice_vector: list, threshold: float = 0.549) -> dict | None:
     distance = float(results[0]["_distance"])
     recognized = 'erkannt' if distance <= threshold else 'unbekannt'
     logger.info(f"Beste Voice-Match-Distance: {distance:.3f}")
-    logger.info(f"Threshold: {threshold} → {recognized}")
+    logger.info(f"Threshold: {threshold} -> {recognized}")
     if distance > threshold:
         return None
     else:

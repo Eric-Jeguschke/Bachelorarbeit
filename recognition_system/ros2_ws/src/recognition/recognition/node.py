@@ -20,7 +20,7 @@ class RecognitionNode(Node):
         # identify_loop ist kein ROS-Callback, daher startet MultiThreadedExecutor ihn nicht automatisch.
         # Manueller Thread nötig, damit spin() im Haupt-Thread weiterläuft und ROS-Callbacks (z.B. on_conversation_done) empfangen kann.
         # https://docs.ros.org/en/foxy/Concepts/About-Executors.html
-        threading.Thread(target=self.identify_loop, daemon=True).start()  # identify_loop blockiert (Service-Calls), daher eigener Thread – spin() im Haupt-Thread bleibt so für ROS-Callbacks erreichbar
+        threading.Thread(target=self.identify_loop, daemon=True).start()  # identify_loop blockiert (Service-Calls), daher eigener Thread. spin() im Haupt-Thread bleibt so für ROS-Callbacks erreichbar
         self.get_logger().info("Recognition node gestartet...")
 
     def identify_loop(self):

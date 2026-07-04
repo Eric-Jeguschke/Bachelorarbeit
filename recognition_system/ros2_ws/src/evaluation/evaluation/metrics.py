@@ -7,7 +7,7 @@ def compute_confusion(true_labels: list[int], distances: list[float], threshold:
 
      :param true_labels: Wahre Labels (1 = gleicher Sprecher, 0 = Fremder)
      :param distances: Cosine-Abstände zwischen Embeddings
-     :param threshold: Grenzwert –> (Distanz <= threshold) → gleicher Sprecher
+     :param threshold: Grenzwert -> (Distanz <= threshold) -> gleicher Sprecher
      :return: (TP, TN, FP, FN)
      """
 
