@@ -127,7 +127,7 @@ class VoiceNode(Node):
         Nimmt über den Mikrofon-Service eine Äußerung auf.
         Gibt bei Erfolg {"transcript": str, "voice_emb": list} zurück, sonst None (z.B. bei Timeout)
         """
-        result = self.call_service(self.mic_client, Listen.Request(), timeout=60.0)  # Länger warten, da Person vielleicht lange spricht
+        result = self.call_service(self.mic_client, Listen.Request(), timeout=180.0)  # 180s, da record_audio() bei durchgehender Sprache kein Gesamtlimit hat
         if result and result.success:
             return {
                 "transcript": result.transcript,
