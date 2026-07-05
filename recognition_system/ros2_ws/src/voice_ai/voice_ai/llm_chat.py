@@ -3,6 +3,8 @@ import time
 from openai import OpenAI
 
 class LLMChatModule:
+    """Führt das Gespräch mit dem LLM: System-Prompt aufbauen, Antworten generieren, Gesprächsende erkennen."""
+
     def __init__(self, logger):
         self.client = OpenAI(base_url="https://models.mylab.th-luebeck.dev/v1", api_key="-", timeout=20.0)
         self.logger = logger
@@ -11,8 +13,7 @@ class LLMChatModule:
     def warmup(self) -> None:
         """
         Erste Anfrage ans LLM ist oft deutlich langsamer.
-        Deshalb einmal Dummy-Anfrage senden, damit das erste echte Gespräch schnell antwortet.
-        :return:
+        Deshalb einmal Dummy-Anfrage senden, damit im  ersten echten Gespräch schnell antwortet.
         """
         try:
             t0 = time.time()
@@ -26,6 +27,7 @@ class LLMChatModule:
             self.logger.error(f"LLM-Warmup fehlgeschlagen: {error}")
 
     def init_with_context(self, name: str, last_seen: int) -> None:
+        """Baut den System-Prompt inkl. Name und letztem Besuch der Person auf."""
         name_text = f"Die Person heißt {name}. Begrüße mit dem Namen. Wenn der Name anonym ist, dann erwähne ihn nicht." if name else ""
         if last_seen:
             days = int((time.time() - last_seen) / 86400)
@@ -49,6 +51,11 @@ class LLMChatModule:
         )
 
     def chat(self, user_text: str, context: str) -> tuple[str, bool]:
+        """
+        Schickt die Nutzernachricht ans LLM und gibt die bereinigte Antwort und das Gesprächsende-Flag zurück.
+        Flag ist True, wenn das Gespräch beendet werden soll (LLM hat [ENDE] gesendet und die Antwort enthält keine
+        Frage), sonst False, wenn das Gespräch weitergeht.
+        """
         system_prompt_context = self.system_prompt + (f"\nRelevante Erinnerungen:\n{context}" if context else "")
         try:
             t0 = time.time()

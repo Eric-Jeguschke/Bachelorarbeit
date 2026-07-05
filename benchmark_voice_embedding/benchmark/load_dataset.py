@@ -10,9 +10,7 @@ Paper über den Datensatz: https://www.robots.ox.ac.uk/~vgg/publications/2017/Na
 """
 from pathlib import Path
 
-VOXCELEB_DIR = Path(r"C:\Studium\Semester 6\Bachelorarbeit\Datensatz\voxceleb")
-WAV_DIR = Path("/data/voxceleb/vox1_test_wav")
-
+VOXCELEB_DIR = Path(r"C:\Studium\Semester 6\Bachelorarbeit\Datensatz\voxceleb") # Muss angepasst werden, je nachdem, wo die VoxCeleb-Daten lokal gespeichert sind
 
 def load_voxceleb1_veri_test() -> list[dict]:
     """

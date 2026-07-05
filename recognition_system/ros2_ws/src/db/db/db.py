@@ -2,7 +2,7 @@ import lancedb
 import pyarrow as pa
 import os
 
-# https://docs.lancedb.com/tables
+# Tabellenschema: https://docs.lancedb.com/tables
 profiles_schema = pa.schema([
     pa.field("guest_id", pa.string()),
     pa.field("name", pa.string()),
@@ -35,7 +35,7 @@ memories_schema = pa.schema([
 
 
 def connect_db():
-    return lancedb.connect(os.environ.get("DB_PATH", "/db/storage")) # "DB_PATH" Umgebungsvariable wird in run_benchmark.py genutzt
+    return lancedb.connect(os.environ.get("DB_PATH", "/db/storage")) # "DB_PATH" Umgebungsvariable wird in run_evaluation.py genutzt
 
 def get_profiles_table():
     return connect_db().create_table("profiles", schema=profiles_schema, exist_ok=True) # Erstellt oder öffnet DB_Table

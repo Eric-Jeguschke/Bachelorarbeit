@@ -15,6 +15,7 @@ MODEL_PATH = Path(__file__).resolve().parent / "models" / "de_DE-thorsten-medium
 
 class SpeakerNode(Node):
     """
+    ROS2-Node: Gibt Text per TTS (Piper) über die Lautsprecher aus.
     PiperVoice Nutzung orientiert sich an:
     https://github.com/OHF-Voice/piper1-gpl/blob/main/docs/API_PYTHON.md
     """
@@ -25,6 +26,7 @@ class SpeakerNode(Node):
         self.get_logger().info("Speaker node gestartet")
 
     def handle_speak(self, request, response):
+        """Service-Handler: Gibt den übergebenen Text per TTS aus."""
         try:
             self.speak(request.text)
             response.success = True
@@ -33,7 +35,8 @@ class SpeakerNode(Node):
             response.success = False
         return response
 
-    def speak(self, text: str):
+    def speak(self, text: str) -> None:
+        """Erzeugt TTS-Audio mit Piper und spielt es über ffmpeg(läuft über PulseAudio) ab."""
         self.get_logger().info("Erzeuge TTS-Audio über Piper...")
         t0 = time.time()
         buffer = io.BytesIO() # Puffer für WAV-Daten im Arbeitsspeicher
@@ -42,7 +45,7 @@ class SpeakerNode(Node):
         self.get_logger().info(f"TTS-Audio erzeugt ({time.time() - t0:.1f}s). Spiele Audio...")
 
         # getvalue() statt getbuffer(): relativ egal hier, da nicht ständig geschrieben wird (kein Random Access)
-        # https://stackoverflow.com/questions/61319551/when-should-one-use-bytesio-getvalue-instead-of-getbuffer
+        # (Erklärung: https://stackoverflow.com/questions/61319551/when-should-one-use-bytesio-getvalue-instead-of-getbuffer)
         # ffplay hat knacken beim Abspielen der Audio verursacht, deswegen zu ffmpeg gewechselt. Hat auch noch knacken, aber weniger.
         # -f wav -i -: WAV von stdin lesen
         # -af apad=pad_dur=0.7: 0.7s Stille anhängen, damit der Puffer sicher leerläuft, bevor ffmpeg endet.

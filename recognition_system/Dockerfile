@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
     ros-jazzy-launch-ros \
     && rm -rf /var/lib/apt/lists/*
 
-# https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/PerfectSetup/
+# Ursprung von asound.conf: https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/PerfectSetup/
 # /etc weil ALSA die systemweite Konfiguration automatisch von dort lädt
 COPY asound.conf /etc/asound.conf
 

@@ -15,16 +15,16 @@ services:
     container_name: ros2_recognition_system
     privileged: true
     environment:
-      - PULSE_SERVER=unix:${XDG_RUNTIME_DIR:-/run/user/1000}/pulse/native
+      - PULSE_SERVER=unix:${XDG_RUNTIME_DIR:-/run/user/1000}/pulse/native # Sagt Apps im Container, wo der PulseAudio-Socket des Hosts liegt
     volumes:
-      - hf_cache:/root/.cache/huggingface
-      - ${HOME}/robot-db:/db/storage
-      - /etc/machine-id:/etc/machine-id
-      - ${XDG_RUNTIME_DIR:-/run/user/1000}/pulse/native:${XDG_RUNTIME_DIR:-/run/user/1000}/pulse/native
-      - /home/pib/.config/pulse/cookie:/root/.config/pulse/cookie
+      - hf_cache:/root/.cache/huggingface # HuggingFace-Modelle (SentenceTransformer, Pyannote) zwischen Container-Neustarts cachen
+      - ${HOME}/robot-db:/db/storage # LanceDB-Storage persistent auf dem Host, damit Gast-Daten Container-Neustarts überleben
+      - /etc/machine-id:/etc/machine-id # Von PulseAudio zur Authentifizierung benötigt, muss mit dem Host übereinstimmen
+      - ${XDG_RUNTIME_DIR:-/run/user/1000}/pulse/native:${XDG_RUNTIME_DIR:-/run/user/1000}/pulse/native # Pulse-Socket des Hosts in den Container durchreichen
+      - /home/pib/.config/pulse/cookie:/root/.config/pulse/cookie # Auth-Cookie, damit sich der Container mit PulseAudio des Hosts verbinden darf
     devices:
-      - /dev/snd:/dev/snd
-      - /dev/bus/usb:/dev/bus/usb1
+      - /dev/snd:/dev/snd # ALSA-Soundgeräte des Hosts
+      - /dev/bus/usb:/dev/bus/usb1 # Genereller USB-Passthrough, hier vermutlich fürs USB-Microphone des Roboters nötig
     restart: always
 
 volumes:

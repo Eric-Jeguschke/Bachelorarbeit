@@ -9,6 +9,8 @@ from db.guest_store import clean_old_entries, find_by_voice, create_guest, updat
 
 
 class GuestDBNode(Node):
+    """ROS2-Node, der die LanceDB-Services (Suchen, Anlegen, Aktualisieren, Kontext abrufen) bereitstellt."""
+
     def __init__(self):
         super().__init__("db")
         # Text Embedding Model: https://aimultiple.com/multilingual-embedding-models, 384 Dimensionen
@@ -22,14 +24,24 @@ class GuestDBNode(Node):
         self.get_logger().info("GuestDB node gestartet")
 
     def embed_passage(self, text: str) -> list[float]:
-        """Für zu speichernde Texte (Fakten, Keywords)"""
+        """
+        Wandelt einen zu speichernden Text (Fakt, Keyword) in ein Embedding um. Wird als text_embedder an
+        create_guest/update_guest übergeben. Das "passage: "-Prefix ist Teil des E5-Modell-Formats. e5-Modelle
+        wurden mit unterschiedlichen Prefixen für gespeicherte Texte ("passage: ") und Suchanfragen ("query: ")
+        trainiert, was die Retrieval-Qualität verbessern soll. Deshalb hier ein anderes Prefix als in embed_query.
+        """
         return self.embedder.encode("passage: " + text, normalize_embeddings=True).tolist()
 
     def embed_query(self, text: str) -> list[float]:
-        """Für Suchanfragen beim RAG-Retrieval"""
+        """
+        Wandelt eine Suchanfrage in ein Embedding um, das beim RAG-Retrieval (retrieve_context) mit den per
+        embed_passage gespeicherten Embeddings verglichen wird. Nutzt das "query: "-Prefix des E5-Modells
+        (siehe embed_passage für Details).
+        """
         return self.embedder.encode("query: " + text, normalize_embeddings=True).tolist()
 
     def handle_find(self, request, response):
+        """Service-Handler: Sucht einen Gast per Stimm-Embedding"""
         try:
             result = find_by_voice(list(request.voice_emb))
         except Exception as e:
@@ -46,6 +58,7 @@ class GuestDBNode(Node):
         return response
 
     def handle_create(self, request, response):
+        """Service-Handler: Legt einen neuen Gast an"""
         guest_id = create_guest(
             name=request.name,
             voice_emb=list(request.voice_emb),
@@ -62,6 +75,7 @@ class GuestDBNode(Node):
         return response
 
     def handle_update(self, request, response):
+        """Service-Handler: Aktualisiert einen bestehenden Gast"""
         guest_id = update_guest(
             guest_id=request.guest_id,
             name=request.name,
@@ -79,6 +93,7 @@ class GuestDBNode(Node):
         return response
 
     def handle_retrieve(self, request, response):
+        """Service-Handler: Liefert RAG-Kontext zu einem Gast"""
         response.contexts = retrieve_context(
             request.guest_id,
             self.embed_query(request.search_text),

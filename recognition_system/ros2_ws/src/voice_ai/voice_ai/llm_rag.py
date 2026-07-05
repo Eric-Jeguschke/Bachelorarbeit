@@ -41,11 +41,20 @@ Wenn du keine relevanten Informationen extrahieren kannst, gib {"text": "", "key
 
 
 class RAGModule:
+    """Extrahiert per LLM strukturierte Infos (Memories, Episode-Zusammenfassung) aus einem Gesprächstext."""
+
     def __init__(self, logger):
         self.client = OpenAI(base_url="https://models.mylab.th-luebeck.dev/v1", api_key="-")
         self.logger = logger
 
     def call_llm(self, system_prompt: str, conversation: str) -> str:
+        """
+        Schickt Prompt und Gespräch ans LLM und repariert/validiert die JSON-Antwort.
+        Das LLM hält sich trotz Anweisung im Prompt nicht immer an valides JSON (z.B. Markdown-Codeblock drumherum,
+        fehlende/überzählige Kommas). repair_json behebt solche typischen Fehler automatisch. json.loads() prüft
+        danach zusätzlich, ob das reparierte Ergebnis wirklich ein valides JSON ist, sonst greift der Except-Block und
+        es wird sicherheitshalber "{}" zurückgegeben, statt kaputtes JSON zurückzugeben.
+        """
         if not conversation.strip():
             return "{}"
         try:
@@ -68,7 +77,9 @@ class RAGModule:
             return "{}"
 
     def extract_episode(self, conversation: str) -> str:
+        """Fasst das Gespräch als Episode (Text + Keywords) zusammen."""
         return self.call_llm(EPISODE_PROMPT, conversation)
 
     def extract_memory(self, conversation: str) -> str:
+        """Extrahiert Fakten über die Person aus dem Gespräch, kategorisiert nach den vier Kategorien im Prompt."""
         return self.call_llm(MEMORY_PROMPT, conversation)

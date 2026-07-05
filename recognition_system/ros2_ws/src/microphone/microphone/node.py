@@ -13,6 +13,8 @@ from microphone.voice_embedder import VoiceEmbedder
 from rclpy.executors import MultiThreadedExecutor
 
 class MicrophoneNode(Node):
+    """ROS2-Node für Audioaufnahme, Transkription (Whisper) und Stimm-Embedding-Berechnung."""
+
     def __init__(self):
         super().__init__("microphone")
         self.client = OpenAI(base_url="https://models.mylab.th-luebeck.dev/v1", api_key="-")
@@ -26,7 +28,6 @@ class MicrophoneNode(Node):
         """
         Erste Anfrage an das gehostete Whisper-Modell ist oft deutlich langsamer.
         Deshalb einmal beim Start mit stillem Audio transkribieren, damit die erste echte Aufnahme schnell verarbeitet wird.
-        :return:
         """
         try:
             t0 = time.time()
@@ -39,6 +40,7 @@ class MicrophoneNode(Node):
             self.get_logger().error(f"Transkriptions-Warmup fehlgeschlagen: {error}")
 
     def handle_stt(self, request, response):
+        """Service-Handler: Nimmt Audio auf (oder nutzt übergebene Datei), transkribiert es und berechnet das Stimm-Embedding"""
         try:
             if request.audio_path:
                 file_path = request.audio_path
@@ -85,10 +87,11 @@ class MicrophoneNode(Node):
         return response
 
     def trim_silence(self, file_path: str) -> str:
+        """Schneidet Stille am Anfang und Ende der Audiodatei mit ffmpeg weg"""
         trimmed_path = "/tmp/recording_trimmed.wav"
         # Stille am Anfang und Ende entfernen, bevor Whisper und das Voice-Embedding sie verarbeiten.
         # Verhindert Whisper-Halluzinationen (z.B. "Vielen Dank.") und verfälschte Embeddings bei stillen Aufnahmen.
-        # https://stackoverflow.com/questions/25697596/using-ffmpeg-with-silencedetect-to-remove-audio-silence
+        # Referenzimplementierung: https://stackoverflow.com/questions/25697596/using-ffmpeg-with-silencedetect-to-remove-audio-silence
         subprocess.run([
             "ffmpeg", "-y", "-loglevel", "error", "-i", file_path,
             # 1. silenceremove: Stille am Anfang entfernen. 2. areverse: Audio umkehren, damit das Ende vorne liegt.
@@ -104,6 +107,7 @@ class MicrophoneNode(Node):
         return trimmed_path
 
     def transcribe(self, trimmed_path: str) -> str:
+        """Transkribiert eine Audiodatei mit Whisper und filtert wahrscheinliche Halluzinationen bei Stille"""
         with open(trimmed_path, "rb") as f:
             # Andere Sprachen sollten auch erkannt werden, da wir mit "language" dem Modell nur einen Tipp geben
             text = self.client.audio.transcriptions.create(model="whisper-3-large", file=f, language="de").text
@@ -114,12 +118,17 @@ class MicrophoneNode(Node):
             return ""
         return text
 
+    # Implementierung angelehnt an:
     # https://stackoverflow.com/questions/18406570/python-record-audio-on-detected-sound
     # https://python-sounddevice.readthedocs.io/en/0.3.15/examples.html
-    def record_audio(self):
+    def record_audio(self) -> tuple[list, bool]:
         """
-        Das Mikrofon misst Luftdruckschwankungen. Schall ist eine Druckwelle die abwechselnd Überdruck und Unterdruck erzeugt. Überdruck -> positive Werte, Unterdruck -> negative Werte. Stille = Luftdruck
-        konstant = 0.
+        Nimmt über das Mikrofon Audio auf, bis zum Sprachende (2 Sekunden lang keine weitere Sprache erkannt).
+        Wenn 30 Sekunden keine Audio über dem Lautstärkeschwellwert erkannt wurde, wird die Aufnahme auch beendet.
+        Gibt (frames, started) zurück: frames ist eine Liste aufgenommener
+        1024-Sample-Blöcke, started ist True, wenn überhaupt Sprache erkannt wurde.
+        Das Mikrofon misst Luftdruckschwankungen. Schall ist eine Druckwelle die abwechselnd Überdruck und Unterdruck erzeugt.
+        Überdruck -> positive Werte, Unterdruck -> negative Werte.
         """
         frames = []
         started = False
@@ -130,7 +139,7 @@ class MicrophoneNode(Node):
             while time.time() < end:
                 data, _ = stream.read(1024)  # blockiert bis 1024 Samples bereit sind, dann eine Iteration
                 sound_level = np.abs(data).mean()
-                # https://dsp.stackexchange.com/questions/8785/how-to-compute-dbfs
+                # Formel von dBFS: https://dsp.stackexchange.com/questions/8785/how-to-compute-dbfs
                 dbfs = 20 * math.log10(sound_level)  # dBFS: Skala mit 0 als Obergrenze , Stille geht gegen minus unendlich
                 log_counter += 1
                 if log_counter % 5 == 0:  # nur jeden 5ten Block loggen, sonst zu viel Output
@@ -140,7 +149,7 @@ class MicrophoneNode(Node):
                     if not started:
                         started = True
                         self.get_logger().info("Sprache erkannt. Aufnahme läuft...")
-                    end = time.time() + 2.0 # Nach Ende der Sprache noch 1,5 Sekunden weiter aufnehmen
+                    end = time.time() + 2.0 # Nach Ende der Sprache noch 2 Sekunden weiter aufnehmen
                     frames.append(data)
                 elif started:
                     frames.append(data)

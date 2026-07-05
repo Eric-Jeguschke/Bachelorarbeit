@@ -12,5 +12,7 @@ librosa~=0.11.0
 pyannote-core~=6.0.1
 pveagle~=3.0.1
 speechbrain~=1.1.0
-ffmpeg-python # https://www.gyan.dev/ffmpeg/builds/ ffmpeg-shared runderladen und in den PATH einfügen
+ffmpeg-python
 ruamel.yaml<0.18
+nemo_toolkit~=2.7.3
+pyannote.audio~=4.0.4

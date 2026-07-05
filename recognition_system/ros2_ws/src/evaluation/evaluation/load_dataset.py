@@ -1,7 +1,7 @@
 ﻿from pathlib import Path
 
 # VoxCeleb1 und VoxCeleb2 enthalten unterschiedliche Sprecher.
-# run_benchmark.py nutzt eines der beiden Sets zur Threshold-Kalibrierung und das andere für den
+# run_evaluation.py nutzt eines der beiden Sets zur Threshold-Kalibrierung und das andere für den
 # n_speaker_enrolled, damit nicht die Trainingsdaten als Testdaten genutzt werden.
 WAV_DIR_DOCKER_VOX1 = Path("/data/voxceleb/vox1_test_wav")  # 40 Sprecher
 WAV_DIR_DOCKER_VOX2 = Path("/data/voxceleb/vox2_test_wav")  # 118 Sprecher

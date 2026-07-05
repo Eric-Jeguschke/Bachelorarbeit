@@ -1,6 +1,5 @@
 import soundfile as sf
 import os
-from pathlib import Path
 from tqdm import tqdm
 from tabulate import tabulate
 
@@ -13,13 +12,19 @@ os.environ["DB_PATH"] = "/tmp/evaluation_db"  # Gilt nur für diesen Prozess, wi
 
 
 def embed_speakers(embedder: VoiceEmbedder, speakers: dict) -> dict:
+    """
+    Berechnet für jede Sprecher-ID die Embeddings aller zugehörigen Audiodateien.
+    speakers kommt von load_speakers, z.B. {"id10001": ["/data/.../1.wav", "/data/.../2.wav"]}.
+    Rückgabe im gleichen Aufbau, nur mit Embeddings statt Dateipfaden z.B. {"id10001": [array([...]), array([...])]}.
+    """
     speaker_embeddings = {}
     for speaker_id, files in tqdm(speakers.items(), desc="Embeddings"): # desc setzt die Beschriftung vor der tqdm-Fortschrittsanzeige
         speaker_embeddings[speaker_id] = [embedder.embed_from_pcm(*sf.read(f, dtype="float32")) for f in files]
     return speaker_embeddings
 
 
-def enroll(enrolled_embeddings: dict):
+def enroll(enrolled_embeddings: dict) -> None:
+    """Legt für jeden Sprecher einen Gast mit dessen erstem Embedding als Enrollment-Template in der DB an."""
     for speaker_id, embs in enrolled_embeddings.items():
         create_guest(
             name=str(speaker_id),
@@ -31,6 +36,11 @@ def enroll(enrolled_embeddings: dict):
 
 
 def collect_distances(enrolled_embeddings: dict, impostor_embeddings: dict) -> tuple[list, list]:
+    """
+    Fragt für alle Test-Embeddings (echte Sprecher + Fremde) die DB ab und sammelt Distanzen mit Labels.
+    Rückgabe: (distances, labels) als zwei gleich lange, parallele Listen, z.B. distances=[0.31, 1.42, ...],
+    labels=[1, 0, ...].
+    """
     distances = []
     labels = []
 
@@ -54,7 +64,8 @@ def collect_distances(enrolled_embeddings: dict, impostor_embeddings: dict) -> t
     return distances, labels
 
 
-def evaluate_n_speaker_enrolled(speaker_embeddings: dict, n_speaker_enrolled: int, threshold: float) -> dict | None:
+def evaluate_n_speaker_enrolled(speaker_embeddings: dict, n_speaker_enrolled: int, threshold: float) -> dict:
+    """Enrollt n Sprecher in einer leeren DB und berechnet TPR/FPR gegen die restlichen Impostor-Sprecher."""
     items = list(speaker_embeddings.items())
     enrolled  = dict(items[:n_speaker_enrolled])
     impostors = dict(items[n_speaker_enrolled:])
@@ -74,12 +85,14 @@ def evaluate_n_speaker_enrolled(speaker_embeddings: dict, n_speaker_enrolled: in
 
 
 def main():
+    """Kalibriert den Erkennungs-Threshold auf VoxCeleb1 und testet TPR/FPR bei steigender Sprecherzahl in der Datenbank auf VoxCeleb2."""
     embedder = VoiceEmbedder()
     embedder.load()
 
     # Threshold-Kalibrierung auf VoxCeleb1. Alle 40 Sprecher werden genutzt. Aber nur 10 Files pro Sprecher, um die Laufzeit der Evaluation zu reduzieren.
     calib_embeddings = embed_speakers(embedder, load_speakers(WAV_DIR_DOCKER_VOX1, max_files=10))
 
+    # Hälfte der Sprecher als "enrollt" behandeln (bekannte Gäste), die andere Hälfte als Impostor (unbekannte Personen).
     calib_items     = list(calib_embeddings.items())
     calib_split_idx = len(calib_items) // 2
     calib_enrolled  = dict(calib_items[:calib_split_idx])
@@ -100,8 +113,6 @@ def main():
     results_by_n = [] # Wird eine Liste von Dict
     for n_speaker_enrolled in test_n_speaker:
         r = evaluate_n_speaker_enrolled(speaker_embeddings, n_speaker_enrolled, best_threshold)
-        if r is None:
-            continue
         results_by_n.append(r)
 
     print(f"Bester Threshold : {best_threshold}, TPR={threshold_result['tpr_%']}%  FPR={threshold_result['fpr_%']}%  (kalibriert auf 40 VoxCeleb1-Sprecher)")

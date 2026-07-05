@@ -9,6 +9,8 @@ from interfaces.srv import FindByVoice, Listen
 
 
 class RecognitionNode(Node):
+    """ROS2-Node: nimmt fortlaufend Stimmen auf und prüft per DB-Abfrage, ob die Person bekannt ist."""
+
     def __init__(self):
         super().__init__("recognition")
         self.start_listening = True
@@ -19,11 +21,17 @@ class RecognitionNode(Node):
 
         # identify_loop ist kein ROS-Callback, daher startet MultiThreadedExecutor ihn nicht automatisch.
         # Manueller Thread nötig, damit spin() im Haupt-Thread weiterläuft und ROS-Callbacks (z.B. on_conversation_done) empfangen kann.
-        # https://docs.ros.org/en/foxy/Concepts/About-Executors.html
+        # Details: https://docs.ros.org/en/foxy/Concepts/About-Executors.html
         threading.Thread(target=self.identify_loop, daemon=True).start()  # identify_loop blockiert (Service-Calls), daher eigener Thread. spin() im Haupt-Thread bleibt so für ROS-Callbacks erreichbar
         self.get_logger().info("Recognition node gestartet...")
 
     def identify_loop(self):
+        """
+        Startpunkt des gesamten Systems: Nimmt in einer Schleife Sprache auf, sucht die Person in der Datenbank
+        und publiziert das Ergebnis (PersonDetected), worauf voice_ai das Gespräch beginnt.
+        Nach dem Publish wartet die Schleife (start_listening = False), bis voice_ai das Gespräch beendet hat und
+        on_conversation_done die Variable start_listening wieder auf True setzt. Erst dann wird auf die nächste Person gewartet.
+        """
         while rclpy.ok():
             if not self.start_listening:
                 time.sleep(0.1)
@@ -56,10 +64,16 @@ class RecognitionNode(Node):
             self.person_detected.publish(msg)
 
     def on_conversation_done(self, msg: String):
+        """
+        Callback: Aktiviert die Aufnahme wieder, sobald ein Gespräch beendet wurde.
+        msg wird nicht ausgewertet. voice_ai publiziert hier nur ein leeres String() als reines Trigger-Signal,
+        der Inhalt der Nachricht spielt keine Rolle.
+        """
         self.start_listening = True
         self.get_logger().info("Gespräch beendet. Warte auf nächste Person...")
 
     def call_service(self, client, request, timeout: float):
+        """Ruft einen ROS2-Service asynchron auf und wartet blockierend bis zum Timeout auf die Antwort."""
         future = client.call_async(request)
         deadline = time.time() + timeout
         while not future.done() and time.time() < deadline:

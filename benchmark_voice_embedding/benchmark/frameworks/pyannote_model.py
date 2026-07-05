@@ -13,7 +13,7 @@ class Pyannote:
         self.token = os.environ.get("HUGGINGFACE_TOKEN")
         self.model_instance = None
 
-    # https://huggingface.co/pyannote/embedding
+    # Referenz-Code: https://huggingface.co/pyannote/embedding
     def load(self) -> None:
         """Lädt das vortrainierte Pyannote-Modell, welches bei __init__ festgelegt wurde"""
         if self.device == "cuda" and not torch.cuda.is_available():
