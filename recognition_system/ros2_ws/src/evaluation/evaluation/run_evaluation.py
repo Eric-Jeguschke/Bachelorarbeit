@@ -38,13 +38,16 @@ def enroll(enrolled_embeddings: dict) -> None:
 def collect_distances(enrolled_embeddings: dict, impostor_embeddings: dict) -> tuple[list, list]:
     """
     Fragt für alle Test-Embeddings (echte Sprecher + Fremde) die DB ab und sammelt Distanzen mit Labels.
+    enrolled_embeddings: Sprecher, die per enroll() in der DB gespeichert wurden (Label 1 = ist in DB).
+    impostor_embeddings: Sprecher, die nicht in der DB sind (Label 0 = ist nicht in DB).
     Rückgabe: (distances, labels) als zwei gleich lange, parallele Listen, z.B. distances=[0.31, 1.42, ...],
     labels=[1, 0, ...].
     """
     distances = []
     labels = []
 
-    # Echte Sprecher (Label 1): embs[1:] sind weitere Aufnahmen desselben Sprechers.
+    # Enrollte Sprecher (in DB, Label 1): embs[1:] sind weitere Aufnahmen desselben Sprechers,
+    # die zum Testen der Wiedererkennung gegen die DB abgefragt werden.
     # embs[0] fehlt hier absichtlich, da es schon in enroll() in der DB gelandet ist.
     for embs in enrolled_embeddings.values():
         for emb in embs[1:]:
@@ -53,7 +56,8 @@ def collect_distances(enrolled_embeddings: dict, impostor_embeddings: dict) -> t
                 distances.append(float(result["_distance"]))
                 labels.append(1)
 
-    # Fremde (Label 0): embs[0] ist nicht in der DB enrollt.
+    # Impostor-Sprecher (nicht in DB, Label 0): Kein embedding wurde enrollt. Jede Abfrage
+    # gegen die DB müsste eigentlich abgelehnt werden.
     for embs in impostor_embeddings.values():
         for emb in embs:
             result = find_by_voice(emb.tolist(), threshold=2.0)
