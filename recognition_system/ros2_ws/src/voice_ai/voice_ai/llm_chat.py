@@ -35,7 +35,7 @@ class LLMChatModule:
         else:
             seen_info = ""
         self.system_prompt = (
-            "Dein Name ist Nova, ein freundlicher Roboter. " +
+            "Dein Name ist Nova, ein freundlicher Roboter von pib. " +
             "Führe ein natürliches, kurzes Gespräch auf Deutsch mit einem Gesprächspartner. " +
             "Antworte kurz, grundsätzlich 1-4 Sätze, entscheide selbst was sinnig erscheint. " +
             "Bei Bedarf darfst du auch gerne ausführlicher werden. " +
@@ -50,21 +50,25 @@ class LLMChatModule:
             "Das Gespräch geht dann eindeutig weiter."
         )
 
-    def chat(self, user_text: str, context: str) -> tuple[str, bool]:
+    def chat(self, user_text: str, context: str, conversation_history: str = "") -> tuple[str, bool]:
         """
         Schickt die Nutzernachricht ans LLM und gibt die bereinigte Antwort und das Gesprächsende-Flag zurück.
         Flag ist True, wenn das Gespräch beendet werden soll (LLM hat [ENDE] gesendet und die Antwort enthält keine
         Frage), sonst False, wenn das Gespräch weitergeht.
+        conversation_history (falls vorhanden) und der Hinweis, worauf zu antworten ist, werden als eigene
+        system-Nachrichten mitgeschickt statt in user_text eingebettet, damit user_text ausschließlich das enthält,
+        was die Person gerade tatsächlich gesagt hat.
         """
         system_prompt_context = self.system_prompt + (f"\nRelevante Erinnerungen:\n{context}" if context else "")
+        message = [{"role": "system", "content": system_prompt_context}]
+        if conversation_history:
+            message.append({"role": "system", "content": f"Bisheriger Gesprächsverlauf:\n{conversation_history}"})
+        message.append({"role": "user", "content": user_text})
         try:
             t0 = time.time()
             response = self.client.chat.completions.create(
                 model="chat-default",
-                messages=[
-                    {"role": "system", "content": system_prompt_context},
-                    {"role": "user", "content": user_text},
-                ],
+                messages=message,
                 temperature=0.7,
             )
             self.logger.info(f"LLM-Antwort erhalten ({time.time() - t0:.1f}s)")

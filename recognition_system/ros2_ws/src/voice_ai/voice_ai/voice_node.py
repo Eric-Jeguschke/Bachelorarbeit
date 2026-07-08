@@ -105,8 +105,7 @@ class VoiceNode(Node):
                     spoken_text = audio["transcript"]
 
                 context = self.fetch_context(person.guest_id, spoken_text) if (person.found and person.guest_id) else ""
-                user_message = spoken_text if not conversation_text else f"{spoken_text}\nZuvor gesprochener Text: {conversation_text}"
-                reply, done = self.llm.chat(user_message, context)
+                reply, done = self.llm.chat(spoken_text, context, conversation_text)
                 if not self.speak(reply):
                     self.get_logger().warning("Abbruch: TTS für LLM-Antwort fehlgeschlagen.")
                     break
