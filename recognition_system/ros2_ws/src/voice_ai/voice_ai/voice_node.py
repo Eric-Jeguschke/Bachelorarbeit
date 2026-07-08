@@ -79,6 +79,7 @@ class VoiceNode(Node):
                         # Einmal im Gespräch nochmal versuchen Person zu erkennen. Embedding aus Begrüßung schlägt häufig fehl, da zu kurz. Deswegen längere aus richtigem Gespräch.
                         if not reidentification:
                             reidentification = True
+                            self.get_logger().info("Versuche Person anhand des Voice-Embeddings im Gespräch zu zweiten Mal zu erkennen...")
                             req = FindByVoice.Request()
                             req.voice_emb = last_voice_emb
                             result = self.call_service(self.db_find_guest_client, req, timeout=3.0)
@@ -88,6 +89,8 @@ class VoiceNode(Node):
                                 person.name = result.name
                                 self.llm.init_with_context(person.name, person.last_seen)
                                 self.get_logger().info(f"Person im Gespräch erkannt: {result.name}")
+                            else:
+                                self.get_logger().info("Person im Gespräch nicht erkannt.")
 
                     #  Keine Sprache erkannt. Zweiter Versuch, falls TTS zuvor die Person nicht verstanden hat.
                     #  Wenn auch beim zweiten Versuch keine Sprache erkannt wird, Gespräch abbrechen.
