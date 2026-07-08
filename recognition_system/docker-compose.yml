@@ -10,8 +10,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      cache_from:
-        - ros2_recognition_system:latest
     container_name: ros2_recognition_system
     privileged: true
     environment:
