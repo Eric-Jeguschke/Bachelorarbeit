@@ -12,10 +12,6 @@ Läuft vollständig auf CPU, kein CUDA erforderlich.
 - **voice_ai/voice_node.py** - Führt nach erkannter Person ein Gespräch auf Deutsch mit einem LLM von mylab. Ruft bei bekannten Personen gespeicherten Kontext mit RAG ab. Speichert am Ende Gesprächsprotokoll, Erinnerungen und aktualisiertes Stimm-Embedding (EMA, 60/40-Gewichtung).  
 - **speaker/node.py** - Text-to-Speech lokal auf der CPU mit **Piper** (de_DE-thorsten-medium). Audioausgabe läuft über ffmpeg.
 
-### Voraussetzungen
-
-- Ubuntu-Terminal 22.04 in WSL2
-- Docker
 
 ## Auf PIB-Roboter System starten
 
@@ -37,6 +33,10 @@ docker compose up --build
 ```
 
 # Ubuntu-Terminal unter Windows (WSL2) System starten
+
+### Voraussetzungen
+- Ubuntu-Terminal 22.04 in WSL2
+- Docker
 
 Der Standard-WSL2-Kernel hat keinen USB-Audio-Treiber, direktes USB durchreichen funktioniert also nicht. Stattdessen nutzt WSLg einen PulseAudio-Server, der das Windows-Standard-Audiogerät durchreicht.
 Headset in Windows als Standard-Audiogerät setzen (Eingabe + Ausgabe). Danach:
