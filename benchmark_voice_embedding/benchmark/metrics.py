@@ -12,7 +12,7 @@ def eer_compute(far: NDArray, tpr: NDArray) -> float:
     labels: 1 = gleicher Sprecher, 0 = verschiedene Sprecher
     scores: höher = ähnlicher.
     """
-    frr = 1.0 - tpr # FRR = False Rejection Rate
+    frr = 1.0 - tpr # FRR = False Rejection Rate. frr ist hier ein NDArray
     index = np.argmin(np.abs(far - frr)) # Index des Punktes mit minimalem Abstand zwischen FAR und FRR
     eer_wert = (far[index] + frr[index]) / 2.0
     return round(eer_wert * 100, 3)
