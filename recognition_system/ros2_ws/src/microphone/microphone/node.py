@@ -139,6 +139,9 @@ class MicrophoneNode(Node):
             while time.time() < end:
                 data, _ = stream.read(1024)  # blockiert bis 1024 Samples bereit sind, dann eine Iteration
                 sound_level = np.abs(data).mean()
+                #  dBFS = 20 * log10(Amplitude / Maximalwert). Bei float32-Audio liegt der Maximalwert
+                #  per Definition bei 1.0, weshalb die Division durch den Maximalwert entfällt und die
+                #  Formel sich zu 20 * log10(Amplitude) vereinfacht. Amplitude ist hier sound_level.
                 # Formel von dBFS: https://dsp.stackexchange.com/questions/8785/how-to-compute-dbfs
                 dbfs = 20 * math.log10(sound_level)  # dBFS: Skala mit 0 als Obergrenze , Stille geht gegen minus unendlich
                 log_counter += 1
