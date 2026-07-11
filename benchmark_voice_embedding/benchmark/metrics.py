@@ -51,7 +51,10 @@ def tar_at_far(target_far: float, far: NDArray, tpr: NDArray) -> float:
     return round(np.interp(target_far, far, tpr) * 100, 3) # target_far und far sind gleich skaliert, deshalb direkt vergleichbar
 
 def all_metrics(labels: list[int], scores: list[float]) -> dict[str, float]:
-    """Berechnet alle Bewertungsmetriken (EER, minDCF, TAR@FAR) aus Labels und Ähnlichkeits-Scores"""
+    """
+    Berechnet alle Bewertungsmetriken (EER, minDCF, TAR@FAR) aus Labels und Ähnlichkeits-Scores.
+    scores: erwartet Cosinus-Ähnlichkeit (höher = ähnlicher)
+    """
     far, tpr, _ = roc_curve(labels, scores, pos_label=1) # roc_curve nennt far eigentlich fpr (far = fpr), hier durchgehend als far bezeichnet.
     fnrs = 1.0 - tpr # FNR = False Negative Rate = FRR = False Rejection Rate, fnrs ist plural, weil Kaldi Implementierung von compute_min_dcf fnrs als Liste von FNRs für alle Schwellenwerte erwartet
     eer_value = eer_compute(far, tpr)
