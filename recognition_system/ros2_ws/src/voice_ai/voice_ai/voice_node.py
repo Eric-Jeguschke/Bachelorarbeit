@@ -189,7 +189,7 @@ class VoiceNode(Node):
             req.episode_json = episode_json
             req.memory_json = memory_json
             self.call_service(self.db_update_guest_client, req, timeout=5)
-            self.get_logger().info(f"Gast aktualisiert: name={person.name!r}, guest_id={person.guest_id},\nmemory={memory_json},\nepisode={episode_json}")
+            self.get_logger().info(f"Gast aktualisiert: name={person.name}, guest_id={person.guest_id},\nmemory={memory_json},\nepisode={episode_json}")
         else:
             req = CreateGuest.Request()
             req.voice_emb = voice_emb
@@ -197,7 +197,7 @@ class VoiceNode(Node):
             req.episode_json = episode_json
             req.memory_json = memory_json
             self.call_service(self.db_create_guest_client, req, timeout=5)
-            self.get_logger().info(f"Neuer Gast gespeichert: name={person.name!r},\nmemory={memory_json},\nepisode={episode_json}")
+            self.get_logger().info(f"Neuer Gast gespeichert: name={person.name},\nmemory={memory_json},\nepisode={episode_json}")
 
         self.get_logger().info("Gespräch gespeichert! Warte auf nächste Person...")
 
@@ -218,7 +218,12 @@ class VoiceNode(Node):
         if not result or not result.success:
             self.get_logger().error("TTS fehlgeschlagen. Gespräch wird abgebrochen.")
             return False
-        # time.sleep(0.4)  # Kurz warten damit Mikrofon nicht den eventuellen Nachhall von der Sprachausgabe vom Roboter aufnimmt. Wert ist experimentell
+        # 0.4s Pause nach TTS-Ausgabe, damit das Mikrofon keinen Nachhall aufnimmt. Wert ist experimentell und nicht perfekt.
+        # Unter Windows mit Headset konnte der Wert entfernt werden und das System hatte
+        # keine Probleme beim Abspielen oder Aufnehmen der Audio. Es wurde sogar besser, weil die Lücke zwischen abspielen und aufnehmen der Audio kürzer wurde.
+        # Ob der Wert auf dem Roboter entfernt oder reduziert werden kann, wurde nicht getestet.
+        # Ohne Pause besteht das Risiko, dass der Roboter seine eigene Ausgabe aufnimmt und transkribiert.
+        time.sleep(0.4)
         return True
 
     def call_service(self, client, request, timeout=15.0):

@@ -98,6 +98,7 @@ class GuestDBNode(Node):
             request.guest_id,
             self.embed_query(request.search_text),
         )
+        self.get_logger().info(f"Aus DB geholter Kontext für guest_id {request.guest_id}: {response.contexts}")
         if not response.contexts:
             self.get_logger().warning(f"Kein Kontext gefunden für guest_id {request.guest_id}")
         return response

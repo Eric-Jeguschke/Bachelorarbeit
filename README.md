@@ -72,6 +72,12 @@ Während Container läuft in neuem Terminal:
 docker exec ros2_recognition_system python3 /ros2_ws/src/db/db/show_db.py
 ```
 
+Datenbank löschen (Container muss dafür gestoppt sein, DB liegt lokal):
+
+```bash
+rm -rf ~/robot-db/*
+```
+
 # Framework-Vergleich der Sprecher-Embedding-Modelle (benchmark_voice_embedding)
 
 Separater Benchmark (außerhalb des ROS2-Systems), das NeMo-, Pyannote- und SpeechBrain-Modelle auf den VoxCeleb1-Verifikations-Trials vergleicht (Laufzeit, RAM/VRAM, EER, minDCF, TAR@FAR).
