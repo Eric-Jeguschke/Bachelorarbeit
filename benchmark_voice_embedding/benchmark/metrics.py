@@ -11,6 +11,7 @@ def eer_compute(far: NDArray, tpr: NDArray) -> float:
     EXTRA INFO: FAR = FP/(FP+TN), FRR = FN/(FN+TP) = 1 - TPR.
     labels: 1 = gleicher Sprecher, 0 = verschiedene Sprecher
     scores: höher = ähnlicher.
+    # Code angelehnt an: https://stackoverflow.com/questions/28339746/equal-error-rate-in-python
     """
     frr = 1.0 - tpr # FRR = False Rejection Rate. frr ist hier ein NDArray
     index = np.argmin(np.abs(far - frr)) # Index des Punktes mit minimalem Abstand zwischen FAR und FRR
