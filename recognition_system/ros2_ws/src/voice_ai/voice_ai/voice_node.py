@@ -4,7 +4,6 @@ import rclpy
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from std_msgs.msg import String
-
 from interfaces.msg import PersonDetected
 from interfaces.srv import CreateGuest, UpdateGuest, Listen, RetrieveContext, TTS, FindByVoice
 from voice_ai.llm_chat import LLMChatModule

@@ -2,10 +2,9 @@ import math
 import subprocess
 import time
 import numpy as np
-import rclpy
 import sounddevice as sd
 import soundfile as sf
-
+import rclpy
 from openai import OpenAI
 from rclpy.node import Node
 from interfaces.srv import Listen

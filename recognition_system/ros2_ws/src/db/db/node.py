@@ -2,9 +2,7 @@ import rclpy
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from sentence_transformers import SentenceTransformer
-
 from interfaces.srv import CreateGuest, UpdateGuest, FindByVoice, RetrieveContext
-
 from db.guest_store import clean_old_entries, find_by_voice, create_guest, update_guest, retrieve_context
 
 

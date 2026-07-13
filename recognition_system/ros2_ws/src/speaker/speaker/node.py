@@ -2,8 +2,8 @@ import io
 import subprocess
 import time
 import wave
-from pathlib import Path
 import rclpy
+from pathlib import Path
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from piper import PiperVoice

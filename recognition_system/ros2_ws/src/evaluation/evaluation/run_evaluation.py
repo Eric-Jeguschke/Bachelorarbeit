@@ -2,7 +2,6 @@ import soundfile as sf
 import os
 from tqdm import tqdm
 from tabulate import tabulate
-
 from microphone.voice_embedder import VoiceEmbedder
 from evaluation.load_dataset import load_speakers, WAV_DIR_DOCKER_VOX1, WAV_DIR_DOCKER_VOX2
 from evaluation.metrics import compute_confusion, find_best_threshold
