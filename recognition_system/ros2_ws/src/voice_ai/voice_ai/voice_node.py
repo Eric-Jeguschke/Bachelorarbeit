@@ -64,7 +64,7 @@ class VoiceNode(Node):
                 # Beim ersten Durchlauf wird das Transkript aus Recognition verwendet, danach immer record() aufgerufen
                 if first_transcript:
                     spoken_text = first_transcript
-                    first_transcript = ""  # Hiernach soll nurnoch record() verwendet werden, damit nicht immer wieder das gleiche Transkript aus Recognition verwendet wird
+                    first_transcript = ""  # Hiernach soll nur noch record() verwendet werden, damit nicht immer wieder das gleiche Transkript aus Recognition verwendet wird
                 else:
                     audio = self.record()
                     if not audio:
@@ -118,7 +118,7 @@ class VoiceNode(Node):
                     self.get_logger().info("Gespräch regulär beendet (LLM hat [ENDE] gesendet).")
                     break
 
-            # AM Ende Gesprächs nochmal prüfen, ob überhaupt etwas gesprochen wurde. Wenn ja, speichern. Wenn nein, nicht speichern.
+            # Am Gesprächsende nochmal prüfen, ob überhaupt etwas gesprochen wurde. Wenn ja, speichern. Wenn nein, nicht speichern.
             if conversation_text.strip():
                 voice_emb_to_save = prev_voice_emb if prev_voice_emb else last_voice_emb
                 self.save_and_finish(person, conversation_text, voice_emb_to_save)

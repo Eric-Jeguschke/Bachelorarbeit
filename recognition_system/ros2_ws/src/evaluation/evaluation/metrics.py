@@ -19,7 +19,7 @@ def compute_confusion(true_labels: list[int], distances: list[float], threshold:
 def find_best_threshold(distances: list[float], true_labels: list[int]) -> dict:
     """
     Bestimmt per Youden-Index den Distanz-Schwellenwert, der TPR - FPR maximiert.
-    roc_curve erwartet: höherer Score = positiver. Cosine-Distanz ist umgekehr (kleiner = ähnlicher, es erwartet somit Kosinus-Ähnlichkeit), daher werden
+    roc_curve erwartet: höherer Score = positiver. Cosine-Distanz ist umgekehrt (kleiner = ähnlicher, es erwartet somit Kosinus-Ähnlichkeit), daher werden
     die Distanzen negiert, bevor sie an roc_curve übergeben werden. Ohne die Negation läge die ROC-Kurve unter der
     theoretischen Diagonalen. roc_curve setzt den ersten Threshold immer künstlich auf inf. Ohne Negation gewinnt genau dieser
     Punkt. roc_curve probiert dabei jeden einzigartigen Wert in den negierten Distanzen als Threshold aus und berechnet
