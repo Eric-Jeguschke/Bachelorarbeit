@@ -46,7 +46,7 @@ Headset in Windows als Standard-Audiogerät setzen (Eingabe + Ausgabe). Danach:
 cd "<PFAD_ZUM_REPO>/recognition_system"  # Pfad zum lokal geklonten Repository, unter WSL2 z.B. über /mnt/c/... erreichbar
 ```
 ```bash
-docker build -t ros2_recognition_system . && docker stop ros2_recognition_system && docker rm ros2_recognition_system && docker run -it --name ros2_recognition_system \
+docker build -t ros2_recognition_system . && docker stop ros2_recognition_system; docker rm ros2_recognition_system; docker run -it --name ros2_recognition_system \
   -v hf_cache:/root/.cache/huggingface \
   -v $HOME/robot-db:/db/storage \
   -e PULSE_SERVER=unix:/mnt/wslg/runtime-dir/pulse/native \
@@ -76,7 +76,7 @@ docker exec ros2_recognition_system python3 /ros2_ws/src/db/db/show_db.py
 Datenbank löschen (Container muss dafür gestoppt sein, DB liegt lokal):
 
 ```bash
-rm -rf ~/frobot-db/*
+rm -rf ~/robot-db/*
 ```
 
 ## Framework-Vergleich der Sprecher-Embedding-Modelle (benchmark_voice_embedding)
