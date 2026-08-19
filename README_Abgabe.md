@@ -96,4 +96,4 @@ pip install -r requirements.txt
 python run_benchmark.py
 ```
 
-Ergebnisse landen in `benchmark_voice_embedding/results/summary.json`.
+Ergebnisse landen in `benchmark_voice_embedding/results/summary.json`
